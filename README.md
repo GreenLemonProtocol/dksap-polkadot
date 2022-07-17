@@ -61,6 +61,11 @@ Upload compiled contract `erc721/target/ink/erc721.contract` to local node by su
 ##### Update contract address
 Copy erc721 contract address from substrate contracts UI after contract deployed, open config/default.json, and update `ContractAddress`.
 
+##### Start relayer service
+```
+node relayer/index.js
+```
+
 ##### Generate key pairs
 ```
 node client/0-generateKeyPair.js
