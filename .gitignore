@@ -1,3 +1,20 @@
+nodejs-implementation/node_modules
+relayer/node_modules
+config/alice.json
+config/bob.json
+
+# Ignore build artifacts from the local tests sub-crate.
+contract/target/
+
+# Ignore backup files creates by cargo fmt.
+contract/**/*.rs.bk
+
+# Remove Cargo.lock when creating an executable, leave it for libraries
+# More information here http://doc.crates.io/guide.html#cargotoml-vs-cargolock
+contract/Cargo.lock
+
+.DS_Store
+
 # Logs
 logs
 *.log
@@ -102,3 +119,7 @@ dist
 
 # TernJS port file
 .tern-port
+
+# package-lock
+*.lock
+*-lock.json
