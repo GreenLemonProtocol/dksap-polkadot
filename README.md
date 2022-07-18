@@ -4,6 +4,11 @@
 
 Public ledgers are generally seen as “pseudo-anonymous” as addresses can be linked to one person although that person’s identity is unknown to the public. However, by combining this info with other data it is possible to discover the real-world identity behind the address. Many individuals and companies prefer to have an additional layer of security to keep their privacy. That’s where Dual-Key Stealth Address Protocol(DKSAP) comes to play.
 
+This project was funded by the Web3 Foundation Grants Program.
+
+* [Proposal: Dual-Key Stealth Address Protocol](https://github.com/w3f/Grants-Program/pull/997)
+* [Milestone Delivery: Dual-Key Stealth Address Protocol](https://github.com/w3f/Grant-Milestone-Delivery/pull/504)
+
 
 ### Algorithm
 The first full working implementation of DKSAP(Dual-Key Stealth Address Protocol) was announced by a developer known as rynomster/sdcoin in 2014 for ShadowSend, a capable, efficient and decentralized anonymous wallet solution. The DKSAP has been implemented in many cryptocurrency systems since then, including Monero, Samourai Wallet, and TokenPay, just to name a few. The protocol takes advantage of two pairs of cryptographic keys, namely a ‘scan key’ pair and a ‘spend key’ pair, and computes a one-time payment address per transaction, as detailed below:
@@ -21,7 +26,7 @@ The first full working implementation of DKSAP(Dual-Key Stealth Address Protocol
 In DKSAP, if an auditor or a proxy server exists in the system, the receiver can share the ‘scan private key’ s and the ‘spend public key’ B with the auditor/proxy server so that those entities can scan the blockchain transaction on behalf of the receiver. However, they are not able the compute the ephemeral private key c + b and spend the payment.
 
 ### Project Details
-This repository demonstrates how to build non-fungible tokens with an anonymous owner for the Polkadot ecosystem.
+This project demonstrates how to build non-fungible tokens with an anonymous owner for the Polkadot ecosystem.
 
 #### How to Play
 
