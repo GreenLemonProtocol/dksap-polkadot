@@ -33,9 +33,11 @@ This project demonstrates how to build non-fungible tokens with an anonymous own
 ##### Install
 If you are a new talent for Polkadot blockchain or Node.js, please install the environment first.
 
-[Install substrate environment](https://docs.substrate.io/tutorials/get-started/build-local-blockchain/)
+[Download substrate-contracts-node release from releases page](https://github.com/paritytech/substrate-contracts-node/releases)
 
 [Install Node.js environment](https://nodejs.org/en/download/)
+
+[Install carogo-contract](https://github.com/paritytech/cargo-contract)
 
 ```
 # Install project dependencies
@@ -44,7 +46,7 @@ npm install -d
 
 ##### Start the local substrate node
 ```
-./target/release/node-template --dev
+./substrate-contracts-node --dev
 ```
 
 ##### Build contract
