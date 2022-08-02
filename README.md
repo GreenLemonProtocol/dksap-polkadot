@@ -51,6 +51,7 @@ npm install -d
 
 ##### Build contract
 ```
+cd erc721
 cargo +nightly contract build
 ```
 
@@ -67,6 +68,12 @@ Upload compiled contract `erc721/target/ink/erc721.contract` to local node by su
 
 ##### Update contract address
 Copy erc721 contract address from substrate contracts UI after contract deployed, open config/default.json, and update `ContractAddress`.
+
+Note:
+```
+# Please back to the project root directory before running the below commands.
+cd ..
+```
 
 ##### Start relayer service
 ```
