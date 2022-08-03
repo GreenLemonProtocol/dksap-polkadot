@@ -53,9 +53,9 @@ export async function generateEncyptedAddress(scanPublicKeyPoint, spendPublicKey
     // console.log(PToU8a);
 
     // Convert to substrate address format
-    const destinationAccountId = crypto.encodeAddress(PToU8a);
+    const owner = crypto.encodeAddress(PToU8a);
 
-    return { ephemeralPublicKey, destinationAccountId };
+    return { ephemeralPublicKey, owner };
 }
 
 /**
