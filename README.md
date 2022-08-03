@@ -33,7 +33,7 @@ This project demonstrates how to build non-fungible tokens with an anonymous own
 ##### Install
 If you are a new talent for Polkadot blockchain or Node.js, please install the environment first.
 
-[Download substrate-contracts-node release from releases page](https://github.com/paritytech/substrate-contracts-node/releases)
+[Download substrate-contracts-node](https://github.com/paritytech/substrate-contracts-node/releases)
 
 [Install Node.js environment](https://nodejs.org/en/download/)
 
@@ -63,7 +63,7 @@ cargo +nightly test
 ##### Deploy contract
 Upload compiled contract `erc721/target/ink/erc721.contract` to local node by substrate contracts UI.
 
-[Click me to read more instructions](https://docs.substrate.io/tutorials/smart-contracts/first-smart-contract/#deploy-the-contract)
+[Click me to read more instructions](https://ink.substrate.io/getting-started/deploy-your-contract/)
 
 
 ##### Update contract address
