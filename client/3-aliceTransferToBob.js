@@ -28,13 +28,13 @@ try {
         const spendPublicKeyPoint = secp256k1.Point.fromHex(bobPublicKeys[1]);
 
         // Generate Encrypted address by Bob's public keys
-        const { ephemeralPublicKey, destinationAccountId } = await generateEncyptedAddress(scanPublicKeyPoint, spendPublicKeyPoint);
+        const { ephemeralPublicKey, owner } = await generateEncyptedAddress(scanPublicKeyPoint, spendPublicKeyPoint);
 
         // Compute private key 
         const keyBytes = secp256k1.utils.privateAdd(aliceSpendPrivateKey, sharedSecret);
 
         // Sign transaction by Alice's spend private key
-        let destinationBytes = crypto.decodeAddress(destinationAccountId);
+        let destinationBytes = crypto.decodeAddress(owner);
         let ephemeralPublicKeyBytes = ephemeralPublicKey.toRawBytes(true);
         let tokenIdBytes = intTobytes(tokenId);
         let params = new Uint8Array(
@@ -61,7 +61,7 @@ try {
             timeout: 10000,
             data: {
                 action: 'transfer',
-                destination: destinationAccountId,
+                destination: owner,
                 id: tokenId,
                 ephemeral_public_key: bytesToHex(ephemeralPublicKeyBytes),
                 signature: signature
@@ -73,6 +73,7 @@ try {
 
         // Check status of relayer repsonse
         if (res.status == 200) {
+            console.log('Encrypted owner address: ' + owner);
             console.log('Transaction sent with hash ' + res.data);
         } else {
             console.log('Transaction sent failed, please check your connection to relayer service.');

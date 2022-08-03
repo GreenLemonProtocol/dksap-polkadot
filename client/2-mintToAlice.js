@@ -17,7 +17,7 @@ try {
     const spendPublicKeyPoint = secp256k1.Point.fromHex(alicePublicKeys[1]);
 
     // Generate Encrypted address by Alice's public keys
-    const { ephemeralPublicKey, destinationAccountId } = await generateEncyptedAddress(scanPublicKeyPoint, spendPublicKeyPoint);
+    const { ephemeralPublicKey, owner } = await generateEncyptedAddress(scanPublicKeyPoint, spendPublicKeyPoint);
 
     // Compress ephemeral public key
     let ephemeralPublicKeyBytes = ephemeralPublicKey.toRawBytes(true);
@@ -29,7 +29,7 @@ try {
         timeout: 10000,
         data: {
             action: 'mint',
-            owner: destinationAccountId,
+            owner: owner,
             ephemeral_public_key: bytesToHex(ephemeralPublicKeyBytes)
         },
         headers: {
