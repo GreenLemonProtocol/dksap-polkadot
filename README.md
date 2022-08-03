@@ -111,4 +111,4 @@ node client/5-aliceBurn.js
 * Implement other functions of ERC721, such as approve, transferFrom, getApproved, etc.
 
 ### Demo video
-[DKSAP-Demo](https://drive.google.com/file/d/1DHeuuObucA9vFkAcBvFyr22fs1x_uVOA/view?usp=sharing)
+[DKSAP-Demo](https://www.youtube.com/watch?v=QB1QE0t7FeQ)
