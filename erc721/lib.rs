@@ -84,10 +84,6 @@ mod erc721 {
         owned_tokens_count: Mapping<AccountId, u32>,
         /// Mapping from token to approvals users.
         token_approvals: Mapping<TokenId, AccountId>,
-        /// Mapping from owner to operator approvals.
-        operator_approvals: Mapping<(AccountId, AccountId), ()>,
-        /// Mapping from owner to ephemeral public key
-        operator_ephemeral: Mapping<AccountId, String>,
         /// Mapping from AccountId to nonce, which is a number added to a hashed.
         account_nonce: Mapping<AccountId, u32>
     }
@@ -173,25 +169,6 @@ mod erc721 {
             self.token_approvals.get(&id)
         }
 
-        /// Returns `true` if the operator is approved by the owner.
-        #[ink(message)]
-        pub fn is_approved_for_all(&self, owner: AccountId, operator: AccountId) -> bool {
-            self.approved_for_all(owner, operator)
-        }
-
-        /// Approves or disapproves the operator for all tokens of the caller.
-        #[ink(message)]
-        pub fn set_approval_for_all(
-            &mut self,
-            to: AccountId,
-            approved: bool,
-            ephemeral_public_key: String,
-            signature: String
-        ) -> Result<(), Error> {
-            self.approve_for_all(to, approved, ephemeral_public_key, signature)?;
-            Ok(())
-        }
-
         /// Approves the account to transfer the specified token on behalf of the caller.
         #[ink(message)]
         pub fn approve(&mut self, to: AccountId, id: TokenId, ephemeral_public_key: String, signature: String) -> Result<(), Error> {
@@ -203,12 +180,6 @@ mod erc721 {
         #[ink(message)]
         pub fn ephemeral_public_key_of(&self, id: TokenId) -> Option<String> {
             self.token_ephemeral.get(&id)
-        }
-
-        /// Returns the operator ephemeral public key by owner.
-        #[ink(message)]
-        pub fn operator_ephemeral_of(&self, owner: AccountId) -> Option<String> {
-            self.operator_ephemeral.get(&owner)
         }
 
         /// Returns the public keys of the alias.
@@ -503,54 +474,6 @@ mod erc721 {
             self.token_ephemeral.insert(&id, &ephemeral_public_key);
         }
 
-        /// Approves or disapproves the operator to transfer all tokens of the caller.
-        fn approve_for_all(
-            &mut self,
-            to: AccountId,
-            approved: bool,
-            ephemeral_public_key: String,
-            signature: String
-        ) -> Result<(), Error> {
-            let mut input = Vec::new();
-
-            // raw message data compose of to
-            let to_bytes: [u8; 32] = *to.as_ref();
-            let ephemeral_public_key_bytes: [u8; 33] = self
-                .hex_decode(&ephemeral_public_key)
-                .unwrap()
-                .as_slice()
-                .try_into()
-                .unwrap();
-            input.extend(to_bytes.iter());
-            input.extend(ephemeral_public_key_bytes.iter());
-
-            // use keccka256 to hash the raw message data
-            let mut messag_hash: [u8; 32] = [0; 32];
-            ink_env::hash_bytes::<ink_env::hash::Keccak256>(&input, &mut messag_hash);
-
-            // recover signer
-            let signer = self.recover_signer(&messag_hash, &signature)?;
-            
-            if to == signer {
-                return Err(Error::NotAllowed)
-            }
-            self.env().emit_event(ApprovalForAll {
-                owner: signer,
-                operator: to,
-                approved,
-            });
-
-            if approved {
-                self.operator_approvals.insert((&signer, &to), &());
-                self.operator_ephemeral.insert(&signer, &ephemeral_public_key);
-            } else {
-                self.operator_approvals.remove((&signer, &to));
-                self.operator_ephemeral.remove(&signer);
-            }
-
-            Ok(())
-        }
-
         /// Approve the passed `AccountId` to transfer the specified token on behalf of the message's sender.
         fn approve_for(&mut self, to: &AccountId, id: TokenId, ephemeral_public_key: String, signature: String) -> Result<(), Error> {
             if !self.exists(id) {
@@ -579,8 +502,7 @@ mod erc721 {
             let signer = self.recover_signer(&messag_hash, &signature)?;
 
             let owner = self.owner_of(id);
-            if !(owner == Some(signer)
-                || self.approved_for_all(owner.expect("Error with AccountId"), signer))
+            if !(owner == Some(signer))
             {
                 return Err(Error::NotAllowed)
             };
@@ -616,22 +538,13 @@ mod erc721 {
             self.owned_tokens_count.get(of).unwrap_or(0)
         }
 
-        /// Gets an operator on other Account's behalf.
-        fn approved_for_all(&self, owner: AccountId, operator: AccountId) -> bool {
-            self.operator_approvals.contains((&owner, &operator))
-        }
-
         /// Returns true if the `AccountId` `from` is the owner of token `id`
         /// or it has been approved on behalf of the token `id` owner.
         fn approved_or_owner(&self, from: Option<AccountId>, id: TokenId) -> bool {
             let owner = self.owner_of(id);
             from != Some(AccountId::from([0x0; 32]))
                 && (from == owner
-                    || from == self.token_approvals.get(&id)
-                    || self.approved_for_all(
-                        owner.expect("Error with AccountId"),
-                        from.expect("Error with AccountId"),
-                    ))
+                    || from == self.token_approvals.get(&id))
         }
 
         /// Returns true if token `id` exists or false if it does not.
