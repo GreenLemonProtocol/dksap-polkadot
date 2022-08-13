@@ -15,7 +15,8 @@ try {
     const aliceSpendPrivateKey = nconf.get('SpendKeyPair').privateKey;
 
     // Query first NFT id which owned to Alice's scan private key
-    const { tokenId, sharedSecret } = await queryOwnedNFT(aliceScanPrivateKey, aliceSpendPrivateKey, 1);
+    const startTokenId = 1;
+    const { tokenId, sharedSecret } = await queryOwnedNFT(aliceScanPrivateKey, aliceSpendPrivateKey, startTokenId);
 
     if (tokenId && tokenId > 0) {
         // Compute private key 

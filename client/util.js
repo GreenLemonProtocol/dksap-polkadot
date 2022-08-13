@@ -92,9 +92,13 @@ export async function queryOwnedNFT(scanPrivateKey, spendPrivateKey, tokenId) {
         // Convert to substrate address format
         const substrateAddress = crypto.encodeAddress(crypto.blake2AsU8a(P.toRawBytes(true)));
         const ownerOnChain = await contractQuery('ownerOf', tokenId);
+        
+        // Query get_approved of contract
+        const approvedOnChain = await contractQuery('getApproved', tokenId);
+        console.log(substrateAddress);
 
         // Detect owner of NFT equal to substrateAddress
-        if (ownerOnChain == substrateAddress) {
+        if (ownerOnChain == substrateAddress || approvedOnChain == substrateAddress) {
             console.log('Match is successful, NFT id ' + tokenId + ' belongs to current scanPrivateKey ' + scanPrivateKey);
             return { tokenId, sharedSecret, P };
         } else {

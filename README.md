@@ -91,20 +91,31 @@ node client/1-registerScanKey.js
 node client/2-mintToAlice.js
 ```
 
-##### Transfer NFT from Alice to Bob
+##### Alice approve Bob to transfer the NFT
 ```
-node client/3-aliceTransferToBob.js
-```
-
-##### Transfer NFT from Bob to Alice
-```
-node client/4-bobTransferToAlice.js
+node client/3-aliceApproveToBob.js
 ```
 
-##### Burn NFT
+##### Transfer NFT from Bob to Charlie
 ```
-node client/5-aliceBurn.js
+node client/4-bobTransferToCharlie.js
 ```
+
+##### Charlie approve Bob to transfer the NFT
+```
+node client/5-charlieApproveToBob.js
+```
+
+##### Transfer NFT from Charlie to Alice
+```
+node client/6-bobTransferToAlice.js
+```
+
+##### Alice burn NFT
+```
+node client/7-aliceBurn.js
+```
+
 
 ### Future Plans
 * Currently, user transactions are sent free of charge by relayer. This is not possible in the production environment, so we need to modify the relayer in the future version. We can add a deposit function to NFT so that users can deposit tokens into the contract, and then transfer the token as a transaction fee to the relayer based on zero-knowledge proof.

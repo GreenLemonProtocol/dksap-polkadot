@@ -11,11 +11,13 @@ const parentDir = path.resolve(__dirname, '..');
 // Generate config file
 const aliceConfigFile = path.resolve(parentDir, './config/alice.json');
 const bobConfigFile = path.resolve(parentDir, './config/bob.json');
+const charlieConfigFile = path.resolve(parentDir, './config/charlie.json');
 
 (async function () {
     try {
         await generateKeyPairs(aliceConfigFile);
         await generateKeyPairs(bobConfigFile);
+        await generateKeyPairs(charlieConfigFile);
     } catch (err) {
         console.error(err);
     } finally {

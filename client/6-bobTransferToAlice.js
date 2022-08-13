@@ -10,14 +10,14 @@ try {
     nconf.file('./config/default.json');
     const RelayerServiceAddress = nconf.get('RelayerServiceAddress');
 
-    nconf.file('./config/alice.json');
-    const aliceScanPrivateKey = nconf.get('ScanKeyPair').privateKey;
-    const aliceSpendPrivateKey = nconf.get('SpendKeyPair').privateKey;
+    nconf.file('./config/bob.json');
+    const bobScanPrivateKey = nconf.get('ScanKeyPair').privateKey;
+    const bobSpendPrivateKey = nconf.get('SpendKeyPair').privateKey;
 
-    const receiverAlias = 'Bob';
+    const receiverAlias = 'Alice';
 
-    // Query first NFT id which owned to Alice's scan private key
-    const { tokenId, sharedSecret } = await queryOwnedNFT(aliceScanPrivateKey, aliceSpendPrivateKey, 1);
+    // Query first NFT id which owned to Bob's scan private key
+    const { tokenId, sharedSecret } = await queryOwnedNFT(bobScanPrivateKey, bobSpendPrivateKey, 1);
 
     if (tokenId && tokenId > 0) {
         // Query Bob public keys
@@ -27,13 +27,13 @@ try {
         const scanPublicKeyPoint = secp256k1.Point.fromHex(bobPublicKeys[0]);
         const spendPublicKeyPoint = secp256k1.Point.fromHex(bobPublicKeys[1]);
 
-        // Generate Encrypted address by Bob's public keys
+        // Generate Encrypted address by Alice's public keys
         const { ephemeralPublicKey, owner } = await generateEncyptedAddress(scanPublicKeyPoint, spendPublicKeyPoint);
 
         // Compute private key 
-        const keyBytes = secp256k1.utils.privateAdd(aliceSpendPrivateKey, sharedSecret);
+        const keyBytes = secp256k1.utils.privateAdd(bobSpendPrivateKey, sharedSecret);
 
-        // Sign transaction by Alice's spend private key
+        // Sign transaction by Bob's spend private key
         let destinationBytes = crypto.decodeAddress(owner);
         let ephemeralPublicKeyBytes = ephemeralPublicKey.toRawBytes(true);
         let tokenIdBytes = intTobytes(tokenId);
@@ -54,14 +54,18 @@ try {
         );
         const signature = bytesToHex(signatureBytes);
 
+        // Query owner of current NFT
+        const currentOwner = await contractQuery('ownerOf', tokenId);
+
         // Send transaction through relayer service
         let res = await axios({
             url: RelayerServiceAddress,
             method: 'post',
             timeout: 10000,
             data: {
-                action: 'transfer',
-                destination: owner,
+                action: 'transferFrom',
+                from: currentOwner,
+                to: owner,
                 id: tokenId,
                 ephemeral_public_key: bytesToHex(ephemeralPublicKeyBytes),
                 signature: signature
@@ -79,7 +83,7 @@ try {
             console.log('Transaction sent failed, please check your connection to relayer service.');
         }
     } else {
-        console.log('Cannot find the NFT that belongs to Alice');
+        console.log('Cannot find the NFT that belongs to Bob');
     }
 } catch (error) {
     console.log("Send Transaction failed: " + error);

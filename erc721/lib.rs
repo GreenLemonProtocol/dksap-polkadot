@@ -18,9 +18,9 @@
 //! The errors are defined as an `enum` type. Any other error or invariant violation
 //! triggers a panic and therefore rolls back the transaction.
 //!
-//! ## Register Scan Public Key
+//! ## Register Scan & Spend Public Key
 //!
-//! Scan public key register start by calling the `register(&mut self, alias: String, scan_public_key: String)` function.
+//! Scan public key register start by calling the `register_public_keys` function.
 //! When a token owner wants to transfer ownership of the token,
 //! it needs to query the receiver's scan public key through the contract, and then generate an encrypted receiver AccountId.
 //!
@@ -30,6 +30,7 @@
 //! A token can be created, transferred, or destroyed.
 //!
 //! Token owners can assign other accounts for transferring specific tokens on their behalf.
+//! It is also possible to authorize an operator (higher rights) for another account to handle tokens.
 //!
 //! ### Token Creation
 //!
@@ -41,8 +42,13 @@
 //!
 //! Transfers may be initiated by:
 //! - The owner of a token
+//! - The approved address of a token
+//! - An authorized operator of the current owner of a token
 //!
-//! The token owner can transfer a token by calling the `transfer` function.
+//! The token owner can transfer a token by calling the `transfer` functions..
+//! An approved address can make a token transfer by calling the `transfer` function.
+//! Operators can transfer tokens on another account's behalf or can approve a token transfer
+//! for a different account.
 //!
 //! ### Token Removal
 //!
@@ -76,12 +82,21 @@ mod erc721 {
         token_ephemeral: Mapping<TokenId, String>,
         /// Mapping from owner to number of owned token.
         owned_tokens_count: Mapping<AccountId, u32>,
+        /// Mapping from token to approvals users.
+        token_approvals: Mapping<TokenId, AccountId>,
+        /// Mapping from owner to operator approvals.
+        operator_approvals: Mapping<(AccountId, AccountId), ()>,
+        /// Mapping from owner to ephemeral public key
+        operator_ephemeral: Mapping<AccountId, String>,
+        /// Mapping from AccountId to nonce, which is a number added to a hashed.
+        account_nonce: Mapping<AccountId, u32>
     }
 
     #[derive(Encode, Decode, Debug, PartialEq, Eq, Copy, Clone)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum Error {
         NotOwner,
+        NotApproved,
         TokenExists,
         AliasExists,
         TokenNotFound,
@@ -107,6 +122,28 @@ mod erc721 {
         id: TokenId,
     }
 
+    /// Event emitted when a token approve occurs.
+    #[ink(event)]
+    pub struct Approval {
+        #[ink(topic)]
+        from: AccountId,
+        #[ink(topic)]
+        to: AccountId,
+        #[ink(topic)]
+        id: TokenId,
+    }
+
+    /// Event emitted when an operator is enabled or disabled for an owner.
+    /// The operator can manage all NFTs of the owner.
+    #[ink(event)]
+    pub struct ApprovalForAll {
+        #[ink(topic)]
+        owner: AccountId,
+        #[ink(topic)]
+        operator: AccountId,
+        approved: bool,
+    }
+
     impl Erc721 {
         /// Creates a new ERC-721 token contract.
         #[ink(constructor)]
@@ -130,10 +167,48 @@ mod erc721 {
             self.token_owner.get(&id)
         }
 
+        /// Returns the approved account ID for this token if any.
+        #[ink(message)]
+        pub fn get_approved(&self, id: TokenId) -> Option<AccountId> {
+            self.token_approvals.get(&id)
+        }
+
+        /// Returns `true` if the operator is approved by the owner.
+        #[ink(message)]
+        pub fn is_approved_for_all(&self, owner: AccountId, operator: AccountId) -> bool {
+            self.approved_for_all(owner, operator)
+        }
+
+        /// Approves or disapproves the operator for all tokens of the caller.
+        #[ink(message)]
+        pub fn set_approval_for_all(
+            &mut self,
+            to: AccountId,
+            approved: bool,
+            ephemeral_public_key: String,
+            signature: String
+        ) -> Result<(), Error> {
+            self.approve_for_all(to, approved, ephemeral_public_key, signature)?;
+            Ok(())
+        }
+
+        /// Approves the account to transfer the specified token on behalf of the caller.
+        #[ink(message)]
+        pub fn approve(&mut self, to: AccountId, id: TokenId, ephemeral_public_key: String, signature: String) -> Result<(), Error> {
+            self.approve_for(&to, id, ephemeral_public_key, signature)?;
+            Ok(())
+        }
+
         /// Returns the ephemeral public key by NFT id.
         #[ink(message)]
         pub fn ephemeral_public_key_of(&self, id: TokenId) -> Option<String> {
             self.token_ephemeral.get(&id)
+        }
+
+        /// Returns the operator ephemeral public key by owner.
+        #[ink(message)]
+        pub fn operator_ephemeral_of(&self, owner: AccountId) -> Option<String> {
+            self.operator_ephemeral.get(&owner)
         }
 
         /// Returns the public keys of the alias.
@@ -165,26 +240,26 @@ mod erc721 {
             Ok(())
         }
 
-        /// Transfers the token from the caller to the given destination.
+        /// Transfers the token from the caller to the given `AccountId`.
         #[ink(message)]
         pub fn transfer(
             &mut self,
-            destination: AccountId,
+            to: AccountId,
             id: TokenId,
             ephemeral_public_key: String,
             signature: String,
         ) -> Result<(), Error> {
             let mut input = Vec::new();
 
-            // raw message data compose of destination + ephemeral_public_key + id
-            let destination_bytes: [u8; 32] = *destination.as_ref();
+            // raw message data compose of to + ephemeral_public_key + id
+            let to_bytes: [u8; 32] = *to.as_ref();
             let ephemeral_public_key_bytes: [u8; 33] = self
                 .hex_decode(&ephemeral_public_key)
                 .unwrap()
                 .as_slice()
                 .try_into()
                 .unwrap();
-            input.extend(destination_bytes.iter());
+            input.extend(to_bytes.iter());
             input.extend(ephemeral_public_key_bytes.iter());
             input.extend(id.to_be_bytes());
 
@@ -192,8 +267,47 @@ mod erc721 {
             let mut messag_hash: [u8; 32] = [0; 32];
             ink_env::hash_bytes::<ink_env::hash::Keccak256>(&input, &mut messag_hash);
 
-            let owner = self.recover_owner(&messag_hash, &signature)?;
-            self.transfer_token_from(&owner, &destination, id, ephemeral_public_key)?;
+            let signer = self.recover_signer(&messag_hash, &signature)?;
+            self.transfer_token_from(&signer, &to, id, ephemeral_public_key)?;
+
+            Ok(())
+        }
+
+        /// Transfer approved or owned token.
+        #[ink(message)]
+        pub fn transfer_from(
+            &mut self,
+            from: AccountId,
+            to: AccountId,
+            id: TokenId,
+            ephemeral_public_key: String,
+            signature: String,
+        ) -> Result<(), Error> {
+            let mut input = Vec::new();
+
+            // raw message data compose of to + ephemeral_public_key + id
+            let to_bytes: [u8; 32] = *to.as_ref();
+            let ephemeral_public_key_bytes: [u8; 33] = self
+                .hex_decode(&ephemeral_public_key)
+                .unwrap()
+                .as_slice()
+                .try_into()
+                .unwrap();
+            input.extend(to_bytes.iter());
+            input.extend(ephemeral_public_key_bytes.iter());
+            input.extend(id.to_be_bytes());
+
+            // use keccka256 to hash the raw message data
+            let mut messag_hash: [u8; 32] = [0; 32];
+            ink_env::hash_bytes::<ink_env::hash::Keccak256>(&input, &mut messag_hash);
+
+            let signer = self.recover_signer(&messag_hash, &signature)?;
+
+            if Some(signer) != self.get_approved(id){
+                return Err(Error::NotApproved);
+            }
+
+            self.transfer_token_from(&from, &to, id, ephemeral_public_key)?;
 
             Ok(())
         }
@@ -228,25 +342,25 @@ mod erc721 {
             let mut output: [u8; 32] = [0; 32];
             ink_env::hash_bytes::<ink_env::hash::Keccak256>(&input, &mut output);
 
-            let owner_from_signature = self.recover_owner(&output, &signature)?;
+            let signer = self.recover_signer(&output, &signature)?;
 
             let owner = self.token_owner.get(&id).ok_or(Error::TokenNotFound)?;
-            if owner != owner_from_signature {
+            if owner != signer {
                 return Err(Error::NotOwner);
             };
 
             let count = self
                 .owned_tokens_count
-                .get(&owner_from_signature)
+                .get(&signer)
                 .map(|c| c - 1)
                 .ok_or(Error::CannotFetchValue)?;
             self.owned_tokens_count
-                .insert(&owner_from_signature, &count);
+                .insert(&signer, &count);
             self.token_owner.remove(&id);
             self.total_supply -= 1;
 
             self.env().emit_event(Transfer {
-                from: Some(owner_from_signature),
+                from: Some(signer),
                 to: Some(AccountId::from([0x0; 32])),
                 id,
             });
@@ -254,9 +368,9 @@ mod erc721 {
             Ok(())
         }
 
-        /// Recovers the owner AccountId for given signature and message_hash,
-        /// and return the owner AccountId
-        fn recover_owner(
+        /// Recovers the AccountId for given signature and message_hash,
+        /// and return the signer
+        fn recover_signer(
             &self,
             message_hash: &[u8; 32],
             signature: &String,
@@ -278,9 +392,9 @@ mod erc721 {
                 &recovered_public_key,
                 &mut public_key_hash,
             );
-            let owner = AccountId::from(public_key_hash);
+            let signer = AccountId::from(public_key_hash);
 
-            Ok(owner)
+            Ok(signer)
         }
 
         /// Decodes a hex string into raw bytes.
@@ -318,12 +432,11 @@ mod erc721 {
             if !self.exists(id) {
                 return Err(Error::TokenNotFound);
             };
-
-            let owner = self.token_owner.get(&id).ok_or(Error::TokenNotFound)?;
-            if owner != *from {
-                return Err(Error::NotOwner);
+            if !self.approved_or_owner(Some(*from), id) {
+                return Err(Error::NotApproved);
             };
 
+            self.clear_approval(id);
             self.remove_token_from(from, id)?;
             self.add_token_to(to, id)?;
             self.add_ephemeral_public_key(id, ephemeral_public_key);
@@ -390,9 +503,135 @@ mod erc721 {
             self.token_ephemeral.insert(&id, &ephemeral_public_key);
         }
 
+        /// Approves or disapproves the operator to transfer all tokens of the caller.
+        fn approve_for_all(
+            &mut self,
+            to: AccountId,
+            approved: bool,
+            ephemeral_public_key: String,
+            signature: String
+        ) -> Result<(), Error> {
+            let mut input = Vec::new();
+
+            // raw message data compose of to
+            let to_bytes: [u8; 32] = *to.as_ref();
+            let ephemeral_public_key_bytes: [u8; 33] = self
+                .hex_decode(&ephemeral_public_key)
+                .unwrap()
+                .as_slice()
+                .try_into()
+                .unwrap();
+            input.extend(to_bytes.iter());
+            input.extend(ephemeral_public_key_bytes.iter());
+
+            // use keccka256 to hash the raw message data
+            let mut messag_hash: [u8; 32] = [0; 32];
+            ink_env::hash_bytes::<ink_env::hash::Keccak256>(&input, &mut messag_hash);
+
+            // recover signer
+            let signer = self.recover_signer(&messag_hash, &signature)?;
+            
+            if to == signer {
+                return Err(Error::NotAllowed)
+            }
+            self.env().emit_event(ApprovalForAll {
+                owner: signer,
+                operator: to,
+                approved,
+            });
+
+            if approved {
+                self.operator_approvals.insert((&signer, &to), &());
+                self.operator_ephemeral.insert(&signer, &ephemeral_public_key);
+            } else {
+                self.operator_approvals.remove((&signer, &to));
+                self.operator_ephemeral.remove(&signer);
+            }
+
+            Ok(())
+        }
+
+        /// Approve the passed `AccountId` to transfer the specified token on behalf of the message's sender.
+        fn approve_for(&mut self, to: &AccountId, id: TokenId, ephemeral_public_key: String, signature: String) -> Result<(), Error> {
+            if !self.exists(id) {
+                return Err(Error::TokenNotFound);
+            };
+
+            let mut input = Vec::new();
+
+            // raw message data compose of to + id
+            let to_bytes: [u8; 32] = *to.as_ref();
+            let ephemeral_public_key_bytes: [u8; 33] = self
+                .hex_decode(&ephemeral_public_key)
+                .unwrap()
+                .as_slice()
+                .try_into()
+                .unwrap();
+            input.extend(to_bytes.iter());
+            input.extend(ephemeral_public_key_bytes.iter());
+            input.extend(id.to_be_bytes());
+
+            // use keccka256 to hash the raw message data
+            let mut messag_hash: [u8; 32] = [0; 32];
+            ink_env::hash_bytes::<ink_env::hash::Keccak256>(&input, &mut messag_hash);
+
+            // recover signer
+            let signer = self.recover_signer(&messag_hash, &signature)?;
+
+            let owner = self.owner_of(id);
+            if !(owner == Some(signer)
+                || self.approved_for_all(owner.expect("Error with AccountId"), signer))
+            {
+                return Err(Error::NotAllowed)
+            };
+
+            if *to == AccountId::from([0x0; 32]) {
+                return Err(Error::NotAllowed)
+            };
+
+            if self.token_approvals.contains(&id) {
+                return Err(Error::CannotInsert)
+            } else {
+                self.token_approvals.insert(&id, to);
+            }
+
+            self.add_ephemeral_public_key(id, ephemeral_public_key);
+
+            self.env().emit_event(Approval {
+                from: signer,
+                to: *to,
+                id,
+            });
+
+            Ok(())
+        }
+
+        /// Removes existing approval from token `id`.
+        fn clear_approval(&mut self, id: TokenId) {
+            self.token_approvals.remove(&id);
+        }
+
         // Returns the total number of tokens from an account.
         fn balance_of_or_zero(&self, of: &AccountId) -> u32 {
             self.owned_tokens_count.get(of).unwrap_or(0)
+        }
+
+        /// Gets an operator on other Account's behalf.
+        fn approved_for_all(&self, owner: AccountId, operator: AccountId) -> bool {
+            self.operator_approvals.contains((&owner, &operator))
+        }
+
+        /// Returns true if the `AccountId` `from` is the owner of token `id`
+        /// or it has been approved on behalf of the token `id` owner.
+        fn approved_or_owner(&self, from: Option<AccountId>, id: TokenId) -> bool {
+            let owner = self.owner_of(id);
+            from != Some(AccountId::from([0x0; 32]))
+                && (from == owner
+                    || from == self.token_approvals.get(&id)
+                    || self.approved_for_all(
+                        owner.expect("Error with AccountId"),
+                        from.expect("Error with AccountId"),
+                    ))
         }
 
         /// Returns true if token `id` exists or false if it does not.
@@ -416,7 +655,7 @@ mod erc721 {
 
         // alice ephemeral public key 
         const ALICE_EPHEMERAL_PUBLIC_KEY: &str = "02b5a762b16e063e90950550b4f0e763c0252ca72c06b749f9333a1e6c4353a097";
-        // The alice_encrtyped_address_bytes SS58Address is "5Cu1jWWLfiHjRgnvLDkr1HJQ1ckFWXY5W6k6iUYrSmj7KjMb"
+        // The alice_encrtyped_address_bytes SS58Address is "5Cu1jWWLfiHjRgnvLDkr1HJQ1ckFWXY5W6k6iUYrSmj7KjMb".
         const ALICE_ENCRTYPED_ADDRESS_BYTES: [u8;32] = [
             36, 215, 245,  17,  29, 184, 146, 255,
             59, 234, 134, 104, 240,  23,  67, 201,
@@ -424,9 +663,9 @@ mod erc721 {
             90, 164, 232, 208,  76, 234, 160,  40
          ];
         
-        // bob ephemeral public key 
+        // bob ephemeral public key.
         const BOB_EPHEMERAL_PUBLIC_KEY: &str = "02cdb3c440c8a4f0b276b54ada85660ba4d52ba5e4c4b4faa41dbf24f8940e2f1d";
-        // The alice_encrtyped_address_bytes SS58Address is "5CgfqZemM4Qjuy3V68xYEKwVXkHUcaFntwRa5s7y3WrGUAdr"
+        // The alice_encrtyped_address_bytes SS58Address is "5CgfqZemM4Qjuy3V68xYEKwVXkHUcaFntwRa5s7y3WrGUAdr".
         const BOB_ENCRTYPED_ADDRESS_BYTES: [u8;32] = [
             27, 110,   9, 174, 212,  73, 235, 126,
             22,  14,   5,  39,  57, 236, 197, 196,
@@ -434,7 +673,7 @@ mod erc721 {
            210, 221, 171,  51, 250, 162, 217, 134
          ];
 
-        // signature signed by Node.js
+        // signature signed by Node.js.
         const ALICE_TRANSFER_TO_BOB_SIGNATURE: &str = "8a928342600ef6b6f66720fea96b24509fe4863bdbe15ad70b3272563c8866285e4609d90c3b555a7e3feebbe4f8e1677d55dffbaa530504f1f82c00d8f142a501";
         const ALICE_BURN_SIGNATURE: &str = "f1ef7888110b54243a7c12be25478b7475ccb5a1d6749aeb699a62d7872fa2f6577f4575577e36f656c9df0c85ecbc4f9fc5f2f35b70ebf865e9a2ac9c4e9fee00";
 
@@ -486,7 +725,7 @@ mod erc721 {
                     ALICE_SPEND_PUB_KEY.to_string()
                 )
             );
-            // Alias Alice cannot register again
+            // Alias Alice cannot register again.
             assert_eq!(
                 erc721.register_public_keys(
                     ALICE.to_string().clone(),
@@ -534,24 +773,24 @@ mod erc721 {
 
             let signature = ALICE_TRANSFER_TO_BOB_SIGNATURE.to_string();
 
-            // Create token Id 1 for Alice
+            // Create token Id 1 for Alice.
             assert_eq!(
                 erc721.mint(alice_encrtyped_address, alice_ephemeral_public_key),
                 Ok(())
             );
-            // Alice owns token 1
+            // Alice owns token 1.
             assert_eq!(erc721.balance_of(alice_encrtyped_address), 1);
 
             // Owner owns NFT 1.
             assert_eq!(erc721.owner_of(nft_id), Some(alice_encrtyped_address));
 
-            // Bob does not owns any token
+            // Bob does not owns any token.
             assert_eq!(erc721.balance_of(bob_encrtyped_address), 0);
 
-            // The first Transfer event takes place
+            // The first Transfer event takes place.
             assert_eq!(1, ink_env::test::recorded_events().count());
 
-            // Alice transfers token 1 to Bob
+            // Alice transfers token 1 to Bob.
             assert_eq!(
                 erc721.transfer(
                     bob_encrtyped_address,
@@ -561,10 +800,10 @@ mod erc721 {
                 ),
                 Ok(())
             );
-            // The second Transfer event takes place
+            // The second Transfer event takes place.
             assert_eq!(2, ink_env::test::recorded_events().count());
 
-            // Bob owns token 1
+            // Bob owns token 1.
             assert_eq!(erc721.balance_of(bob_encrtyped_address), 1);
 
             // Owner owns NFT 1.
@@ -582,12 +821,12 @@ mod erc721 {
             let bob_encrtyped_address = AccountId::from(BOB_ENCRTYPED_ADDRESS_BYTES);
             let nft_id = 1;
 
-            // Create token Id 1 for Alice
+            // Create token Id 1 for Alice.
             assert_eq!(
                 erc721.mint(alice_encrtyped_address, alice_ephemeral_public_key),
                 Ok(())
             );
-            // Alice owns token 1
+            // Alice owns token 1.
             assert_eq!(erc721.balance_of(alice_encrtyped_address), 1);
 
             // Owner owns NFT 1.
@@ -597,7 +836,7 @@ mod erc721 {
             assert_eq!(erc721.transfer(bob_encrtyped_address,
                     1,
                     bob_ephemeral_public_key,
-                    ALICE_BURN_SIGNATURE.to_string()), Err(Error::NotOwner));
+                    ALICE_BURN_SIGNATURE.to_string()), Err(Error::NotApproved));
         }
 
         #[ink::test]
@@ -608,12 +847,12 @@ mod erc721 {
             let alice_encrtyped_address = AccountId::from(ALICE_ENCRTYPED_ADDRESS_BYTES);
             let nft_id = 1;
 
-            // Create token Id 1 for Alice
+            // Create token Id 1 for Alice.
             assert_eq!(
                 erc721.mint(alice_encrtyped_address, alice_ephemeral_public_key),
                 Ok(())
             );
-            // Alice owns token 1
+            // Alice owns token 1.
             assert_eq!(erc721.balance_of(alice_encrtyped_address), 1);
 
             // Owner owns NFT 1.
@@ -631,7 +870,7 @@ mod erc721 {
             // Alice does not owns tokens.
             assert_eq!(erc721.balance_of(alice_encrtyped_address), 0);
 
-            // Token Id 1 does not exists
+            // Token Id 1 does not exists.
             assert_eq!(erc721.owner_of(1), None);
         }
 
@@ -640,7 +879,7 @@ mod erc721 {
             // Create a new contract instance.
             let mut erc721 = Erc721::new();
 
-            // Try burning a non existent token
+            // Try burning a non existent token.
             assert_eq!(erc721.burn(1, ALICE_BURN_SIGNATURE.to_string()), Err(Error::TokenNotFound));
         }
 
@@ -654,19 +893,19 @@ mod erc721 {
 
             let signature = ALICE_TRANSFER_TO_BOB_SIGNATURE.to_string();
 
-            // Create token Id 1 for Alice
+            // Create token Id 1 for Alice.
             assert_eq!(
                 erc721.mint(alice_encrtyped_address, alice_ephemeral_public_key),
                 Ok(())
             );
 
-            // Alice owns token 1
+            // Alice owns token 1.
             assert_eq!(erc721.balance_of(alice_encrtyped_address), 1);
 
             // Owner owns NFT 1.
             assert_eq!(erc721.owner_of(nft_id), Some(alice_encrtyped_address));
 
-            // Try burning this token with a different account
+            // Try burning this token with a different account.
             assert_eq!(erc721.burn(1, signature), Err(Error::NotOwner));
         }
     }

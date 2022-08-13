@@ -4,13 +4,15 @@ import nconf from 'nconf';
 import * as secp256k1 from '@noble/secp256k1';
 import { contractQuery, generateEncyptedAddress, bytesToHex } from './util.js';
 
+const aliceAlias = 'Alice';
+
 try {
     // Read constants from config
     nconf.file('./config/default.json');
     const RelayerServiceAddress = nconf.get('RelayerServiceAddress');
 
     // Query Alice public keys
-    const alicePublicKeys = await contractQuery('publicKeysOf', 'Alice');
+    const alicePublicKeys = await contractQuery('publicKeysOf', aliceAlias);
 
     // Convert hex to elliptic curve point
     const scanPublicKeyPoint = secp256k1.Point.fromHex(alicePublicKeys[0]);
@@ -46,7 +48,7 @@ try {
         const owner = await contractQuery('ownerOf', totalSupply);
 
         console.log('New NFT already minted, id = ' + totalSupply);
-        console.log('Encrypted owner address: ' + owner);
+        console.log('Encrypted destination address: ' + owner);
     } else {
         console.log('Transaction sent failed, please check your connection to relayer service.');
     }

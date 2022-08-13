@@ -18,11 +18,17 @@ nconf.file('./config/bob.json');
 const bobScanKeyPair = nconf.get("ScanKeyPair");
 const bobSpendKeyPair = nconf.get("SpendKeyPair");
 
+// Query Charlie key pair
+nconf.file('./config/charlie.json');
+const charlieScanKeyPair = nconf.get("ScanKeyPair");
+const charlieSpendKeyPair = nconf.get("SpendKeyPair");
+
 // Start register process
 (async function () {
     try {
         await registerScanPublicKey('Alice', aliceScanKeyPair.publicKey, aliceSpendKeyPair.publicKey);
         await registerScanPublicKey('Bob', bobScanKeyPair.publicKey, bobSpendKeyPair.publicKey);
+        await registerScanPublicKey('Charlie', charlieScanKeyPair.publicKey, charlieSpendKeyPair.publicKey);
     } catch (err) {
         console.error(err);
     } finally {
