@@ -95,7 +95,7 @@ export async function queryOwnedNFT(scanPrivateKey, spendPrivateKey, tokenId) {
         
         // Query get_approved of contract
         const approvedOnChain = await contractQuery('getApproved', tokenId);
-        console.log(substrateAddress);
+        // console.log(substrateAddress);
 
         // Detect owner of NFT equal to substrateAddress
         if (ownerOnChain == substrateAddress || approvedOnChain == substrateAddress) {

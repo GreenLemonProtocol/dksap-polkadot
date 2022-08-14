@@ -5,6 +5,8 @@ import * as crypto from '@polkadot/util-crypto';
 import * as secp256k1 from '@noble/secp256k1';
 import { contractQuery, generateEncyptedAddress, queryOwnedNFT, bytesToHex, intTobytes } from './util.js';
 
+const receiverAlias = 'Charlie';
+
 try {
     // Read constants from config
     nconf.file('./config/default.json');
@@ -13,8 +15,6 @@ try {
     nconf.file('./config/bob.json');
     const bobScanPrivateKey = nconf.get('ScanKeyPair').privateKey;
     const bobSpendPrivateKey = nconf.get('SpendKeyPair').privateKey;
-
-    const receiverAlias = 'Charlie';
 
     // Query first NFT id which owned to Bob's scan private key
     const { tokenId, sharedSecret } = await queryOwnedNFT(bobScanPrivateKey, bobSpendPrivateKey, 1);

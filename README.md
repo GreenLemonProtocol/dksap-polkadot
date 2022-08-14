@@ -55,7 +55,7 @@ cd erc721
 cargo +nightly contract build
 ```
 
-##### Test contract 
+##### Test contract
 ```
 cargo +nightly test
 ```
