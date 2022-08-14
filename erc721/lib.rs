@@ -209,25 +209,11 @@ mod erc721 {
             ephemeral_public_key: String,
             signature: String,
         ) -> Result<(), Error> {
-            let mut input = Vec::new();
-
-            // raw message data compose of to + ephemeral_public_key + id
-            let to_bytes: [u8; 32] = *to.as_ref();
-            let ephemeral_public_key_bytes: [u8; 33] = self
-                .hex_decode(&ephemeral_public_key)
-                .unwrap()
-                .as_slice()
-                .try_into()
-                .unwrap();
-            input.extend(to_bytes.iter());
-            input.extend(ephemeral_public_key_bytes.iter());
-            input.extend(id.to_be_bytes());
-
-            // use keccka256 to hash the raw message data
-            let mut messag_hash: [u8; 32] = [0; 32];
-            ink_env::hash_bytes::<ink_env::hash::Keccak256>(&input, &mut messag_hash);
-
+            // hash input params
+            let messag_hash = self.hash_message(to, id, ephemeral_public_key.clone());
+            // recover signer
             let signer = self.recover_signer(&messag_hash, &signature)?;
+            
             self.transfer_token_from(&signer, &to, id, ephemeral_public_key)?;
 
             Ok(())
@@ -243,24 +229,9 @@ mod erc721 {
             ephemeral_public_key: String,
             signature: String,
         ) -> Result<(), Error> {
-            let mut input = Vec::new();
-
-            // raw message data compose of to + ephemeral_public_key + id
-            let to_bytes: [u8; 32] = *to.as_ref();
-            let ephemeral_public_key_bytes: [u8; 33] = self
-                .hex_decode(&ephemeral_public_key)
-                .unwrap()
-                .as_slice()
-                .try_into()
-                .unwrap();
-            input.extend(to_bytes.iter());
-            input.extend(ephemeral_public_key_bytes.iter());
-            input.extend(id.to_be_bytes());
-
-            // use keccka256 to hash the raw message data
-            let mut messag_hash: [u8; 32] = [0; 32];
-            ink_env::hash_bytes::<ink_env::hash::Keccak256>(&input, &mut messag_hash);
-
+            // hash input params
+            let messag_hash = self.hash_message(to, id, ephemeral_public_key.clone());
+            // recover signer
             let signer = self.recover_signer(&messag_hash, &signature)?;
 
             if Some(signer) != self.get_approved(id){
@@ -299,10 +270,10 @@ mod erc721 {
             let mut input = Vec::new();
             input.extend(id.to_be_bytes());
 
-            let mut output: [u8; 32] = [0; 32];
-            ink_env::hash_bytes::<ink_env::hash::Keccak256>(&input, &mut output);
+            let mut messag_hash: [u8; 32] = [0; 32];
+            ink_env::hash_bytes::<ink_env::hash::Keccak256>(&input, &mut messag_hash);
 
-            let signer = self.recover_signer(&output, &signature)?;
+            let signer = self.recover_signer(&messag_hash, &signature)?;
 
             let owner = self.token_owner.get(&id).ok_or(Error::TokenNotFound)?;
             if owner != signer {
@@ -326,6 +297,35 @@ mod erc721 {
             });
 
             Ok(())
+        }
+
+        /// Hash receiver + NFT id + ephemeral_public_key
+        /// return the hashed value
+        fn hash_message(
+            &self,
+            to: AccountId,
+            id: TokenId,
+            ephemeral_public_key: String
+        ) -> [u8;32] {
+            let mut input = Vec::new();
+
+            // raw message data compose of to + ephemeral_public_key + id
+            let to_bytes: [u8; 32] = *to.as_ref();
+            let ephemeral_public_key_bytes: [u8; 33] = self
+                .hex_decode(&ephemeral_public_key)
+                .unwrap()
+                .as_slice()
+                .try_into()
+                .unwrap();
+            input.extend(to_bytes.iter());
+            input.extend(ephemeral_public_key_bytes.iter());
+            input.extend(id.to_be_bytes());
+
+            // use keccka256 to hash the raw message data
+            let mut messag_hash: [u8; 32] = [0; 32];
+            ink_env::hash_bytes::<ink_env::hash::Keccak256>(&input, &mut messag_hash);
+
+            return messag_hash;
         }
 
         /// Recovers the AccountId for given signature and message_hash,
@@ -469,24 +469,8 @@ mod erc721 {
                 return Err(Error::TokenNotFound);
             };
 
-            let mut input = Vec::new();
-
-            // raw message data compose of to + id
-            let to_bytes: [u8; 32] = *to.as_ref();
-            let ephemeral_public_key_bytes: [u8; 33] = self
-                .hex_decode(&ephemeral_public_key)
-                .unwrap()
-                .as_slice()
-                .try_into()
-                .unwrap();
-            input.extend(to_bytes.iter());
-            input.extend(ephemeral_public_key_bytes.iter());
-            input.extend(id.to_be_bytes());
-
-            // use keccka256 to hash the raw message data
-            let mut messag_hash: [u8; 32] = [0; 32];
-            ink_env::hash_bytes::<ink_env::hash::Keccak256>(&input, &mut messag_hash);
-
+            // hash input params
+            let messag_hash = self.hash_message(*to, id, ephemeral_public_key.clone());
             // recover signer
             let signer = self.recover_signer(&messag_hash, &signature)?;
 
