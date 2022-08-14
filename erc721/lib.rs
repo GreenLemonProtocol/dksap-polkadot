@@ -129,17 +129,6 @@ mod erc721 {
         id: TokenId,
     }
 
-    /// Event emitted when an operator is enabled or disabled for an owner.
-    /// The operator can manage all NFTs of the owner.
-    #[ink(event)]
-    pub struct ApprovalForAll {
-        #[ink(topic)]
-        owner: AccountId,
-        #[ink(topic)]
-        operator: AccountId,
-        approved: bool,
-    }
-
     impl Erc721 {
         /// Creates a new ERC-721 token contract.
         #[ink(constructor)]
