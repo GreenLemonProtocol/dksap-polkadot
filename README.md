@@ -101,25 +101,18 @@ node client/3-aliceApproveToBob.js
 node client/4-bobTransferToCharlie.js
 ```
 
-##### Charlie approve Bob to transfer the NFT
-```
-node client/5-charlieApproveToBob.js
-```
-
 ##### Transfer NFT from Charlie to Alice
 ```
-node client/6-bobTransferToAlice.js
+node client/5-charlieTransferToAlice.js
 ```
 
 ##### Alice burn NFT
 ```
-node client/7-aliceBurn.js
+node client/6-aliceBurn.js
 ```
-
 
 ### Future Plans
 * Currently, user transactions are sent free of charge by relayer. This is not possible in the production environment, so we need to modify the relayer in the future version. We can add a deposit function to NFT so that users can deposit tokens into the contract, and then transfer the token as a transaction fee to the relayer based on zero-knowledge proof.
-* Implement other functions of ERC721, such as approve, transferFrom, getApproved, etc.
 
 ### Demo video
 [DKSAP-Demo](https://www.youtube.com/watch?v=QB1QE0t7FeQ)
