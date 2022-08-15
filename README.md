@@ -7,6 +7,7 @@ Public ledgers are generally seen as “pseudo-anonymous” as addresses can be 
 This project was funded by the Web3 Foundation Grants Program.
 
 * [Proposal: Dual-Key Stealth Address Protocol](https://github.com/w3f/Grants-Program/pull/997)
+* [Proposal: Green Lemon Protocol🍋 - An anonymous NFT solution](https://github.com/w3f/Grants-Program/pull/1096)
 * [Milestone Delivery: Dual-Key Stealth Address Protocol](https://github.com/w3f/Grant-Milestone-Delivery/pull/504)
 
 
