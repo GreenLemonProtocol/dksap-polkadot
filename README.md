@@ -96,12 +96,12 @@ node client/2-mintToAlice.js
 node client/3-aliceApproveToBob.js
 ```
 
-##### Transfer NFT from Bob to Charlie
+##### Bob transfer NFT to Charlie
 ```
 node client/4-bobTransferToCharlie.js
 ```
 
-##### Transfer NFT from Charlie to Alice
+##### Charlie transfer NFT to Alice
 ```
 node client/5-charlieTransferToAlice.js
 ```
