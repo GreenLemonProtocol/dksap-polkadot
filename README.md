@@ -1,4 +1,4 @@
-# The DKSAP implementation for the Polkadot ecosystem
+# The dual-key stealth address protocol for ERC721
 
 ### Overview
 
