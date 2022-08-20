@@ -163,8 +163,8 @@ mod erc721 {
     ///
     /// Every signature signed by the token owner needs to hash the latest token nonce
     #[ink(message)]
-    pub fn token_nonce_of(&self, id: TokenId) -> Option<u32> {
-      self.token_nonce.get(&id)
+    pub fn token_nonce_of(&self, id: TokenId) -> u32 {
+      self.token_nonce.get(&id).unwrap_or(0)
     }
 
     /// Returns the balance of the owner.
@@ -302,6 +302,7 @@ mod erc721 {
     pub fn burn(&mut self, id: TokenId, signature: String) -> Result<(), Error> {
       let mut input = Vec::new();
       input.extend(id.to_be_bytes());
+      input.extend(self.token_nonce_of(id).to_be_bytes());
 
       let mut messag_hash: [u8; 32] = [0; 32];
       ink_env::hash_bytes::<ink_env::hash::Keccak256>(&input, &mut messag_hash);
@@ -348,6 +349,7 @@ mod erc721 {
       input.extend(to_bytes.iter());
       input.extend(ephemeral_public_key_bytes.iter());
       input.extend(id.to_be_bytes());
+      input.extend(self.token_nonce_of(id).to_be_bytes());
 
       // use keccka256 to hash the raw message data
       let mut messag_hash: [u8; 32] = [0; 32];
@@ -532,6 +534,14 @@ mod erc721 {
 
       self.add_ephemeral_public_key(id, ephemeral_public_key);
 
+      // Update token nonce
+      let nonce = self
+        .token_nonce
+        .get(&id)
+        .map(|c| c + 1)
+        .ok_or(Error::CannotFetchValue)?;
+      self.token_nonce.insert(&id, &nonce);
+
       self.env().emit_event(Approval {
         from: signer,
         to: *to,
@@ -574,9 +584,9 @@ mod erc721 {
     use ink_lang as ink;
     const ALICE: &str = "Alice";
     const ALICE_SCAN_PUB_KEY: &str =
-      "03ab1082d409df644256885de6e8df9b60ac185d0cd387dc3b6bdd901bca1bc142";
+      "032d822430da92b8f87ccee0872375e15b56622722a90e6427748835b42286838f";
     const ALICE_SPEND_PUB_KEY: &str =
-      "03c71557501541378ea8c35372adb555766d4e0e20bc10116440533cb8d9f45e29";
+      "0283aed736678d2864d09ce59f487f83051a62d9fa0f9c1ae75858ae1d7185bd12";
 
     // alice ephemeral public key
     const ALICE_EPHEMERAL_PUBLIC_KEY: &str =
@@ -610,13 +620,13 @@ mod erc721 {
       let ephemeral_public_key = ALICE_EPHEMERAL_PUBLIC_KEY.to_string();
       let nft_id = 1;
 
-      assert_eq!(erc721.token_nonce_of(nft_id), None);
+      assert_eq!(erc721.token_nonce_of(nft_id), 0);
       // Create token Id 1.
       assert_eq!(erc721.mint(accounts.alice, ephemeral_public_key), Ok(()));
 
       assert_eq!(erc721.base_uri(), BASE_URI.to_string());
       assert_eq!(erc721.token_uri(nft_id), BASE_URI.to_string() + "/1");
-      assert_eq!(erc721.token_nonce_of(nft_id), Some(1));
+      assert_eq!(erc721.token_nonce_of(nft_id), 1);
     }
 
     #[ink::test]
@@ -688,7 +698,7 @@ mod erc721 {
 
       // Token 1 does not exists.
       assert_eq!(erc721.owner_of(1), None);
-      assert_eq!(erc721.token_nonce_of(nft_id), None);
+      assert_eq!(erc721.token_nonce_of(nft_id), 0);
 
       // Alice does not owns tokens.
       assert_eq!(erc721.balance_of(accounts.alice), 0);
@@ -701,7 +711,7 @@ mod erc721 {
 
       // Owner owns NFT 1.
       assert_eq!(erc721.owner_of(nft_id), Some(accounts.alice));
-      assert_eq!(erc721.token_nonce_of(nft_id), Some(1));
+      assert_eq!(erc721.token_nonce_of(nft_id), 1);
     }
 
     #[ink::test]
@@ -733,7 +743,7 @@ mod erc721 {
 
       // The first Transfer event takes place.
       assert_eq!(1, ink_env::test::recorded_events().count());
-      assert_eq!(erc721.token_nonce_of(nft_id), Some(1));
+      assert_eq!(erc721.token_nonce_of(nft_id), 1);
 
       // Alice transfers token 1 to Bob.
       assert_eq!(
@@ -753,7 +763,7 @@ mod erc721 {
 
       // Owner owns NFT 1.
       assert_eq!(erc721.owner_of(nft_id), Some(bob_encrtyped_address));
-      assert_eq!(erc721.token_nonce_of(nft_id), Some(2));
+      assert_eq!(erc721.token_nonce_of(nft_id), 2);
     }
 
     #[ink::test]
@@ -788,7 +798,7 @@ mod erc721 {
         ),
         Err(Error::NotApproved)
       );
-      assert_eq!(erc721.token_nonce_of(nft_id), Some(1));
+      assert_eq!(erc721.token_nonce_of(nft_id), 1);
     }
 
     #[ink::test]
@@ -806,7 +816,7 @@ mod erc721 {
       );
 
       // Alice owns token 1.
-      assert_eq!(erc721.token_nonce_of(nft_id), Some(1));
+      assert_eq!(erc721.token_nonce_of(nft_id), 1);
       assert_eq!(erc721.balance_of(alice_encrtyped_address), 1);
 
       // Owner owns NFT 1.
@@ -820,7 +830,7 @@ mod erc721 {
 
       // Token Id 1 does not exists.
       assert_eq!(erc721.owner_of(1), None);
-      assert_eq!(erc721.token_nonce_of(nft_id), None);
+      assert_eq!(erc721.token_nonce_of(nft_id), 0);
     }
 
     #[ink::test]
@@ -856,7 +866,7 @@ mod erc721 {
 
       // Owner owns NFT 1.
       assert_eq!(erc721.owner_of(nft_id), Some(alice_encrtyped_address));
-      assert_eq!(erc721.token_nonce_of(nft_id), Some(1));
+      assert_eq!(erc721.token_nonce_of(nft_id), 1);
 
       // Try burning this token with a different account.
       assert_eq!(erc721.burn(1, signature), Err(Error::NotOwner));

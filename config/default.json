@@ -1,7 +1,7 @@
 {
-    "WsProvider":"ws://127.0.0.1:9944",
-    "ContractAddress":"5HYq8d9tmMn8hLhguJN1iZcEjwHiHtP2NCCPsa3gbwytMxqT",
-    "ContractMetaData":"./erc721/target/ink/metadata.json",
-    "RelayerAccount":"//Eve",
-    "RelayerServiceAddress":"http://127.0.0.1:3000/sendTransaction"
+  "WsProvider": "ws://127.0.0.1:9944",
+  "ContractAddress": "5FbaDeHynJiq5z37SYrB38Jka48uVcCpWFhdt7iNnTD2cumB",
+  "ContractMetaData": "./erc721/target/ink/metadata.json",
+  "RelayerAccount": "//Eve",
+  "RelayerServiceAddress": "http://127.0.0.1:3000/sendTransaction"
 }

@@ -8,82 +8,87 @@ import { contractQuery, generateEncyptedAddress, queryOwnedNFT, bytesToHex, intT
 const receiverAlias = 'Bob';
 
 try {
-    // Read constants from config
-    nconf.file('./config/default.json');
-    const RelayerServiceAddress = nconf.get('RelayerServiceAddress');
+  // Read constants from config
+  nconf.file('./config/default.json');
+  const RelayerServiceAddress = nconf.get('RelayerServiceAddress');
 
-    nconf.file('./config/alice.json');
-    const aliceScanPrivateKey = nconf.get('ScanKeyPair').privateKey;
-    const aliceSpendPrivateKey = nconf.get('SpendKeyPair').privateKey;
+  nconf.file('./config/alice.json');
+  const aliceScanPrivateKey = nconf.get('ScanKeyPair').privateKey;
+  const aliceSpendPrivateKey = nconf.get('SpendKeyPair').privateKey;
 
-    // Query first NFT id which owned to Alice's scan private key
-    const startTokenId = 1;
-    const { tokenId, sharedSecret } = await queryOwnedNFT(aliceScanPrivateKey, aliceSpendPrivateKey, startTokenId);
+  // Query first NFT id which owned to Alice's scan private key
+  const startTokenId = 1;
+  const { tokenId, sharedSecret } = await queryOwnedNFT(aliceScanPrivateKey, aliceSpendPrivateKey, startTokenId);
 
-    if (tokenId && tokenId > 0) {
-        // Query Bob public keys
-        const bobPublicKeys = await contractQuery('publicKeysOf', receiverAlias);
+  if (tokenId && tokenId > 0) {
+    const tokenNonce = await contractQuery('tokenNonceOf', tokenId);
+    console.log('Current token nonce: ' + tokenNonce);
 
-        // Convert hex to elliptic curve point
-        const scanPublicKeyPoint = secp256k1.Point.fromHex(bobPublicKeys[0]);
-        const spendPublicKeyPoint = secp256k1.Point.fromHex(bobPublicKeys[1]);
+    // Query Bob public keys
+    const bobPublicKeys = await contractQuery('publicKeysOf', receiverAlias);
 
-        // Generate Encrypted address by Bob's public keys
-        const { ephemeralPublicKey, owner } = await generateEncyptedAddress(scanPublicKeyPoint, spendPublicKeyPoint);
+    // Convert hex to elliptic curve point
+    const scanPublicKeyPoint = secp256k1.Point.fromHex(bobPublicKeys[0]);
+    const spendPublicKeyPoint = secp256k1.Point.fromHex(bobPublicKeys[1]);
 
-        // Compute private key 
-        const keyBytes = secp256k1.utils.privateAdd(aliceSpendPrivateKey, sharedSecret);
+    // Generate Encrypted address by Bob's public keys
+    const { ephemeralPublicKey, owner } = await generateEncyptedAddress(scanPublicKeyPoint, spendPublicKeyPoint);
 
-        // Sign transaction by Alice's spend private key
-        let destinationBytes = crypto.decodeAddress(owner);
-        let ephemeralPublicKeyBytes = ephemeralPublicKey.toRawBytes(true);
-        let tokenIdBytes = intTobytes(tokenId);
-        let params = new Uint8Array(
-            destinationBytes.length + ephemeralPublicKeyBytes.length + tokenIdBytes.length
-        );
+    // Compute private key 
+    const keyBytes = secp256k1.utils.privateAdd(aliceSpendPrivateKey, sharedSecret);
 
-        // Prepare origin data
-        params.set(destinationBytes, 0);
-        params.set(ephemeralPublicKeyBytes, destinationBytes.length);
-        params.set(tokenIdBytes, destinationBytes.length + ephemeralPublicKeyBytes.length);
+    // Sign transaction by Alice's spend private key
+    let destinationBytes = crypto.decodeAddress(owner);
+    let ephemeralPublicKeyBytes = ephemeralPublicKey.toRawBytes(true);
+    let tokenIdBytes = intTobytes(tokenId);
+    let tokenNonceBytes = intTobytes(tokenNonce);
+    let params = new Uint8Array(
+      destinationBytes.length + ephemeralPublicKeyBytes.length + tokenIdBytes.length + tokenNonceBytes.length
+    );
 
-        // Hash origin data
-        const signatureBytes = crypto.secp256k1Sign(
-            params,
-            { secretKey: keyBytes },
-            'keccak'
-        );
-        const signature = bytesToHex(signatureBytes);
+    // Prepare origin data
+    params.set(destinationBytes, 0);
+    params.set(ephemeralPublicKeyBytes, destinationBytes.length);
+    params.set(tokenIdBytes, destinationBytes.length + ephemeralPublicKeyBytes.length);
+    params.set(tokenNonceBytes, destinationBytes.length + ephemeralPublicKeyBytes.length + tokenIdBytes.length);
 
-        // Send transaction through relayer service
-        let res = await axios({
-            url: RelayerServiceAddress,
-            method: 'post',
-            timeout: 10000,
-            data: {
-                action: 'approve',
-                to: owner,
-                id: tokenId,
-                ephemeral_public_key: bytesToHex(ephemeralPublicKeyBytes),
-                signature: signature
-            },
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
+    // Hash origin data
+    const signatureBytes = crypto.secp256k1Sign(
+      params,
+      { secretKey: keyBytes },
+      'keccak'
+    );
+    const signature = bytesToHex(signatureBytes);
 
-        // Check status of relayer repsonse
-        if (res.status == 200) {
-            console.log('Encrypted destination address: ' + owner);
-            console.log('Transaction sent with hash ' + res.data);
-        } else {
-            console.log('Transaction sent failed, please check your connection to relayer service.');
-        }
+    // Send transaction through relayer service
+    let res = await axios({
+      url: RelayerServiceAddress,
+      method: 'post',
+      timeout: 10000,
+      data: {
+        action: 'approve',
+        to: owner,
+        id: tokenId,
+        ephemeral_public_key: bytesToHex(ephemeralPublicKeyBytes),
+        signature: signature
+      },
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    // Check status of relayer repsonse
+    if (res.status == 200) {
+      console.log('Encrypted destination address: ' + owner);
+      console.log('Transaction sent with hash ' + res.data);
     } else {
-        console.log('Cannot find the NFT that belongs to Alice');
+      console.log('Transaction sent failed, please check your connection to relayer service.');
     }
+  } else {
+    console.log('Cannot find the NFT that belongs to Alice');
+  }
 } catch (error) {
-    console.log("Send Transaction failed: " + error);
+  console.log("Send Transaction failed: " + error);
 } finally {
-    process.exit();
+  process.exit();
 }
