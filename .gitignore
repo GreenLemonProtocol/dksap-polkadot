@@ -1,7 +1,6 @@
-nodejs-implementation/node_modules
-relayer/node_modules
 config/alice.json
 config/bob.json
+config/charlie.json
 
 # Ignore build artifacts from the local tests sub-crate.
 contract/target/

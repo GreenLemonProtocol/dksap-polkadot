@@ -30,6 +30,7 @@ console.log('Relayer address:', relayerAccount.address);
 
 const contractAddress = nconf.get('ContractAddress');
 const contract = new ContractPromise(api, metadata, contractAddress);
+console.log('Smart contract address: ' + contractAddress);
 
 app.get('/', (req, res) => {
   res.send('Hello World.')

@@ -1,4 +1,4 @@
-# The DKSAP implementation for the Polkadot ecosystem
+# The dual-key stealth address protocol for ERC721
 
 ### Overview
 
@@ -56,13 +56,18 @@ cd erc721
 cargo +nightly contract build
 ```
 
-##### Test contract 
+##### Test contract
 ```
 cargo +nightly test
 ```
 
 ##### Deploy contract
 Upload compiled contract `erc721/target/ink/erc721.contract` to local node by substrate contracts UI.
+
+##### Base URI for deployment constructor
+```
+https://raw.githubusercontent.com/GreenLemonProtocol/assets/main/nft
+```
 
 [Click me to read more instructions](https://ink.substrate.io/getting-started/deploy-your-contract/)
 
@@ -92,24 +97,28 @@ node client/1-registerScanKey.js
 node client/2-mintToAlice.js
 ```
 
-##### Transfer NFT from Alice to Bob
+##### Alice approve Bob to transfer the NFT
 ```
-node client/3-aliceTransferToBob.js
-```
-
-##### Transfer NFT from Bob to Alice
-```
-node client/4-bobTransferToAlice.js
+node client/3-aliceApproveToBob.js
 ```
 
-##### Burn NFT
+##### Bob transfer NFT to Charlie
 ```
-node client/5-aliceBurn.js
+node client/4-bobTransferToCharlie.js
+```
+
+##### Charlie transfer NFT to Alice
+```
+node client/5-charlieTransferToAlice.js
+```
+
+##### Alice burn NFT
+```
+node client/6-aliceBurn.js
 ```
 
 ### Future Plans
 * Currently, user transactions are sent free of charge by relayer. This is not possible in the production environment, so we need to modify the relayer in the future version. We can add a deposit function to NFT so that users can deposit tokens into the contract, and then transfer the token as a transaction fee to the relayer based on zero-knowledge proof.
-* Implement other functions of ERC721, such as approve, transferFrom, getApproved, etc.
 
 ### Demo video
 [DKSAP-Demo](https://www.youtube.com/watch?v=QB1QE0t7FeQ)
