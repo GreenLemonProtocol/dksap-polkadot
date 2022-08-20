@@ -58,6 +58,7 @@ try {
       'keccak'
     );
     const signature = bytesToHex(signatureBytes);
+    // console.log('signature: ' + signature);
 
     // Query owner of current NFT
     const currentOwner = await contractQuery('ownerOf', tokenId);

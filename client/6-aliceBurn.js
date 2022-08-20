@@ -41,6 +41,7 @@ try {
       'keccak'
     );
     const signature = bytesToHex(signatureBytes);
+    // console.log('signature: ' + signature);
 
     // Send transaction through relayer service
     let res = await axios({

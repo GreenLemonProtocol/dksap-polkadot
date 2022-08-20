@@ -578,37 +578,43 @@ mod erc721 {
   /// Unit tests
   #[cfg(test)]
   mod tests {
-    /// Imports all the definitions from the outer scope so we can use them here.
-    // Because the test environment does not support elliptic curve APIs, it has to be hard-coded for test purposes.
+    // Imports all the definitions from the outer scope so we can use them here.
     use super::*;
     use ink_lang as ink;
+    // Because the test environment does not support elliptic curve APIs, public keys and signatures have to be hard-coded for test purposes.
     const ALICE: &str = "Alice";
     const ALICE_SCAN_PUB_KEY: &str =
       "032d822430da92b8f87ccee0872375e15b56622722a90e6427748835b42286838f";
     const ALICE_SPEND_PUB_KEY: &str =
       "0283aed736678d2864d09ce59f487f83051a62d9fa0f9c1ae75858ae1d7185bd12";
 
-    // alice ephemeral public key
+    // Alice ephemeral public key.
     const ALICE_EPHEMERAL_PUBLIC_KEY: &str =
-      "02b5a762b16e063e90950550b4f0e763c0252ca72c06b749f9333a1e6c4353a097";
-    // The alice_encrtyped_address_bytes SS58Address is "5Cu1jWWLfiHjRgnvLDkr1HJQ1ckFWXY5W6k6iUYrSmj7KjMb".
-    const ALICE_ENCRTYPED_ADDRESS_BYTES: [u8; 32] = [
-      36, 215, 245, 17, 29, 184, 146, 255, 59, 234, 134, 104, 240, 23, 67, 201, 213, 53, 37, 31,
-      202, 108, 20, 114, 90, 164, 232, 208, 76, 234, 160, 40,
+      "023283ba9bfc9f689cb4ca88d14734aea6e3bdded740d0e560e9344ab4fe825733";
+    const ALICE_ENCRYPTED_ADDRESS_BYTES: [u8; 32] = [
+      16, 106, 116, 36, 96, 18, 235, 9, 152, 150, 66, 41, 227, 178, 97, 58, 215, 25, 214, 129, 221,
+      230, 182, 93, 103, 15, 31, 51, 86, 33, 248, 192,
     ];
 
-    // bob ephemeral public key.
+    // Bob ephemeral public key.
     const BOB_EPHEMERAL_PUBLIC_KEY: &str =
-      "02cdb3c440c8a4f0b276b54ada85660ba4d52ba5e4c4b4faa41dbf24f8940e2f1d";
-    // The alice_encrtyped_address_bytes SS58Address is "5CgfqZemM4Qjuy3V68xYEKwVXkHUcaFntwRa5s7y3WrGUAdr".
-    const BOB_ENCRTYPED_ADDRESS_BYTES: [u8; 32] = [
-      27, 110, 9, 174, 212, 73, 235, 126, 22, 14, 5, 39, 57, 236, 197, 196, 33, 60, 122, 60, 243,
-      210, 222, 253, 210, 221, 171, 51, 250, 162, 217, 134,
+      "02c5e1752c5f2d858207407c8d1e0b35a3f078a5d80dd3f109bf9ff0bfebd1f449";
+    const BOB_ENCRYPTED_ADDRESS_BYTES: [u8; 32] = [
+      163, 107, 29, 40, 120, 48, 34, 216, 17, 150, 100, 98, 245, 18, 117, 135, 100, 170, 65, 66,
+      168, 150, 165, 125, 46, 117, 207, 171, 186, 216, 207, 200,
+    ];
+
+    // Charlie ephemeral public key.
+    const CHARLIE_EPHEMERAL_PUBLIC_KEY: &str =
+      "02d6ed2824df9dd354c9343a1daf7a93d1f3bc5b6cfcc4150676b70676b1cadff8";
+    const CHARLIE_ENCRYPTED_ADDRESS_BYTES: [u8; 32] = [
+      85, 42, 128, 42, 184, 40, 141, 192, 239, 172, 100, 182, 219, 143, 32, 28, 16, 27, 7, 234,
+      217, 189, 78, 93, 59, 114, 163, 111, 135, 255, 234, 80,
     ];
 
     // signature signed by Node.js.
-    const ALICE_TRANSFER_TO_BOB_SIGNATURE: &str = "8a928342600ef6b6f66720fea96b24509fe4863bdbe15ad70b3272563c8866285e4609d90c3b555a7e3feebbe4f8e1677d55dffbaa530504f1f82c00d8f142a501";
-    const ALICE_BURN_SIGNATURE: &str = "f1ef7888110b54243a7c12be25478b7475ccb5a1d6749aeb699a62d7872fa2f6577f4575577e36f656c9df0c85ecbc4f9fc5f2f35b70ebf865e9a2ac9c4e9fee00";
+    const ALICE_APPROVE_TO_BOB_SIGNATURE: &str = "cee1d58cc00c64355a7d2bf9b750e6ed0816e9ebbcc2de35aa2acb06178026c62983d2640c027904e31295378aa6750e6a9a1f2d126d49b642819014faa3d1ab01";
+    const BOB_TRANSFER_TO_CHARLIE_SIGNATURE: &str = "76caa2e333d969e0ea54edffe62dc9c838666730cd8828d4c845b83cbfdaa88a4baa5dfc657fce0f130df546a2b545dedd81d0e1e5ef847939184018b7376b2400";
 
     const BASE_URI: &str = "https://raw.githubusercontent.com/GreenLemonProtocol/assets/main/nft";
 
@@ -630,13 +636,13 @@ mod erc721 {
     }
 
     #[ink::test]
-    fn register_public_keys_works() {
+    fn register_public_keys() {
       // Create a new contract instance.
       let mut erc721 = Erc721::new(BASE_URI.to_string());
 
       // Alias Alice does not registered.
       assert_eq!(erc721.public_keys_of(ALICE.to_string().clone()), None);
-      // Register Alice scan public key & spend public key.
+      // Register scan public key & spend public key for Alice.
       assert_eq!(
         erc721.register_public_keys(
           ALICE.to_string().clone(),
@@ -645,7 +651,7 @@ mod erc721 {
         ),
         Ok(())
       );
-      // The scan&spend public key of Alice should equal to "alice_public_key".
+      // The scan&spend public key of Alice should match previously params.
       assert_eq!(
         erc721.public_keys_of(ALICE.to_string().clone()).unwrap(),
         (
@@ -653,30 +659,7 @@ mod erc721 {
           ALICE_SPEND_PUB_KEY.to_string()
         )
       );
-    }
 
-    #[ink::test]
-    fn register_existing_should_fail() {
-      // Create a new contract instance.
-      let mut erc721 = Erc721::new(BASE_URI.to_string());
-
-      // Register Alice scan&spend public key.
-      assert_eq!(
-        erc721.register_public_keys(
-          ALICE.to_string().clone(),
-          ALICE_SCAN_PUB_KEY.to_string().clone(),
-          ALICE_SPEND_PUB_KEY.to_string().clone()
-        ),
-        Ok(())
-      );
-      // The scan&spend public key of Alice should equal to "alice_public_key".
-      assert_eq!(
-        erc721.public_keys_of(ALICE.to_string().clone()).unwrap(),
-        (
-          ALICE_SCAN_PUB_KEY.to_string(),
-          ALICE_SPEND_PUB_KEY.to_string()
-        )
-      );
       // Alias Alice cannot register again.
       assert_eq!(
         erc721.register_public_keys(
@@ -689,7 +672,7 @@ mod erc721 {
     }
 
     #[ink::test]
-    fn mint_works() {
+    fn mint() {
       let accounts = ink_env::test::default_accounts::<ink_env::DefaultEnvironment>();
       // Create a new contract instance.
       let mut erc721 = Erc721::new(BASE_URI.to_string());
@@ -704,110 +687,114 @@ mod erc721 {
       assert_eq!(erc721.balance_of(accounts.alice), 0);
 
       // Create token Id 1.
-      assert_eq!(erc721.mint(accounts.alice, ephemeral_public_key), Ok(()));
+      assert_eq!(
+        erc721.mint(accounts.alice, ephemeral_public_key.clone()),
+        Ok(())
+      );
 
       // Owner owns 1 token.
       assert_eq!(erc721.balance_of(accounts.alice), nft_id);
+      assert_eq!(
+        erc721.ephemeral_public_key_of(nft_id),
+        Some(ephemeral_public_key.clone())
+      );
 
       // Owner owns NFT 1.
       assert_eq!(erc721.owner_of(nft_id), Some(accounts.alice));
       assert_eq!(erc721.token_nonce_of(nft_id), 1);
+
+      // Create token Id 2.
+      assert_eq!(erc721.mint(accounts.alice, ephemeral_public_key), Ok(()));
+
+      // Alice balance equal 2
+      assert_eq!(erc721.balance_of(accounts.alice), 2);
     }
 
     #[ink::test]
-    fn transfer_works() {
+    fn approve_and_transfer() {
       // Create a new contract instance.
       let mut erc721 = Erc721::new(BASE_URI.to_string());
       let alice_ephemeral_public_key = ALICE_EPHEMERAL_PUBLIC_KEY.to_string();
-      let alice_encrtyped_address = AccountId::from(ALICE_ENCRTYPED_ADDRESS_BYTES);
+      let alice_encrypted_address = AccountId::from(ALICE_ENCRYPTED_ADDRESS_BYTES);
 
       let bob_ephemeral_public_key = BOB_EPHEMERAL_PUBLIC_KEY.to_string();
-      let bob_encrtyped_address = AccountId::from(BOB_ENCRTYPED_ADDRESS_BYTES);
+      let bob_encrypted_address = AccountId::from(BOB_ENCRYPTED_ADDRESS_BYTES);
+
+      let charlie_ephemeral_public_key = CHARLIE_EPHEMERAL_PUBLIC_KEY.to_string();
+      let charlie_encrypted_address = AccountId::from(CHARLIE_ENCRYPTED_ADDRESS_BYTES);
       let nft_id = 1;
-
-      let signature = ALICE_TRANSFER_TO_BOB_SIGNATURE.to_string();
-
       // Create token Id 1 for Alice.
       assert_eq!(
-        erc721.mint(alice_encrtyped_address, alice_ephemeral_public_key),
+        erc721.mint(alice_encrypted_address, alice_ephemeral_public_key),
         Ok(())
       );
+
       // Alice owns token 1.
-      assert_eq!(erc721.balance_of(alice_encrtyped_address), 1);
-
-      // Owner owns NFT 1.
-      assert_eq!(erc721.owner_of(nft_id), Some(alice_encrtyped_address));
-
-      // Bob does not owns any token.
-      assert_eq!(erc721.balance_of(bob_encrtyped_address), 0);
-
-      // The first Transfer event takes place.
-      assert_eq!(1, ink_env::test::recorded_events().count());
+      assert_eq!(erc721.balance_of(alice_encrypted_address), 1);
       assert_eq!(erc721.token_nonce_of(nft_id), 1);
 
-      // Alice transfers token 1 to Bob.
+      // Bob transfer token Id 1 should fail
       assert_eq!(
         erc721.transfer(
-          bob_encrtyped_address,
+          charlie_encrypted_address,
           1,
-          bob_ephemeral_public_key,
-          signature
-        ),
-        Ok(())
-      );
-      // The second Transfer event takes place.
-      assert_eq!(2, ink_env::test::recorded_events().count());
-
-      // Bob owns token 1.
-      assert_eq!(erc721.balance_of(bob_encrtyped_address), 1);
-
-      // Owner owns NFT 1.
-      assert_eq!(erc721.owner_of(nft_id), Some(bob_encrtyped_address));
-      assert_eq!(erc721.token_nonce_of(nft_id), 2);
-    }
-
-    #[ink::test]
-    fn invalid_transfer_should_fail() {
-      // Create a new contract instance.
-      let mut erc721 = Erc721::new(BASE_URI.to_string());
-      let alice_ephemeral_public_key = ALICE_EPHEMERAL_PUBLIC_KEY.to_string();
-      let alice_encrtyped_address = AccountId::from(ALICE_ENCRTYPED_ADDRESS_BYTES);
-
-      let bob_ephemeral_public_key = BOB_EPHEMERAL_PUBLIC_KEY.to_string();
-      let bob_encrtyped_address = AccountId::from(BOB_ENCRTYPED_ADDRESS_BYTES);
-      let nft_id = 1;
-
-      // Create token Id 1 for Alice.
-      assert_eq!(
-        erc721.mint(alice_encrtyped_address, alice_ephemeral_public_key),
-        Ok(())
-      );
-      // Alice owns token 1.
-      assert_eq!(erc721.balance_of(alice_encrtyped_address), 1);
-
-      // Owner owns NFT 1.
-      assert_eq!(erc721.owner_of(nft_id), Some(alice_encrtyped_address));
-
-      // Bob cannot transfer not owned tokens.
-      assert_eq!(
-        erc721.transfer(
-          bob_encrtyped_address,
-          1,
-          bob_ephemeral_public_key,
-          ALICE_BURN_SIGNATURE.to_string()
+          bob_ephemeral_public_key.clone(),
+          BOB_TRANSFER_TO_CHARLIE_SIGNATURE.to_string()
         ),
         Err(Error::NotApproved)
       );
-      assert_eq!(erc721.token_nonce_of(nft_id), 1);
+
+      // Alice approves Bob to transfer token 1.
+      assert_eq!(
+        erc721.approve(
+          bob_encrypted_address,
+          nft_id,
+          bob_ephemeral_public_key.clone(),
+          ALICE_APPROVE_TO_BOB_SIGNATURE.to_string()
+        ),
+        Ok(())
+      );
+      assert_eq!(erc721.token_nonce_of(nft_id), 2);
+
+      // Check Bob approved by Alice
+      assert_eq!(erc721.get_approved(nft_id), Some(bob_encrypted_address));
+
+      // Bob transfer token Id 1 should work
+      assert_eq!(
+        erc721.transfer_from(
+          alice_encrypted_address,
+          charlie_encrypted_address,
+          nft_id,
+          charlie_ephemeral_public_key,
+          BOB_TRANSFER_TO_CHARLIE_SIGNATURE.to_string()
+        ),
+        Ok(())
+      );
+
+      // Owner owns NFT 1.
+      assert_eq!(erc721.owner_of(nft_id), Some(charlie_encrypted_address));
+      assert_eq!(erc721.token_nonce_of(nft_id), 3);
     }
 
     #[ink::test]
-    fn burn_works() {
+    fn burn() {
       // Create a new contract instance.
       let mut erc721 = Erc721::new(BASE_URI.to_string());
-      let alice_ephemeral_public_key = ALICE_EPHEMERAL_PUBLIC_KEY.to_string();
-      let alice_encrtyped_address = AccountId::from(ALICE_ENCRTYPED_ADDRESS_BYTES);
+      // Because the test environment does not support elliptic curve APIs, public keys and signatures have to be hard-coded for test purposes.
+      let alice_ephemeral_public_key =
+        "03dc431aae4287de9394f619d62db1b778edf2b7cc124b43aa997bd19e873e32a7".to_string();
+      let alice_encrtyped_address = AccountId::from([
+        196, 250, 116, 227, 97, 67, 187, 105, 255, 166, 192, 240, 230, 161, 59, 203, 103, 129, 38,
+        138, 170, 251, 216, 145, 117, 22, 187, 84, 152, 240, 21, 254,
+      ]);
+      let alice_burn_signature = "a957b9d018192de9786392253a98c6b12cb5f67505fba655350e5f8a67e07c5f72c53d7826191ae4f50e080a869cf7ff0c15a61f4dd73ec88a86166ec33faac900".to_string();
       let nft_id = 1;
+
+      // Try burning a non existent token.
+      assert_eq!(
+        erc721.burn(1, alice_burn_signature.to_string()),
+        Err(Error::TokenNotFound)
+      );
 
       // Create token Id 1 for Alice.
       assert_eq!(
@@ -822,8 +809,14 @@ mod erc721 {
       // Owner owns NFT 1.
       assert_eq!(erc721.owner_of(nft_id), Some(alice_encrtyped_address));
 
-      // Destroy token Id 1.
-      assert_eq!(erc721.burn(1, ALICE_BURN_SIGNATURE.to_string()), Ok(()));
+      // Try burning this token with a wrong signature.
+      assert_eq!(
+        erc721.burn(1, ALICE_APPROVE_TO_BOB_SIGNATURE.to_string()),
+        Err(Error::NotOwner)
+      );
+
+      // Burn token Id 1.
+      assert_eq!(erc721.burn(1, alice_burn_signature.to_string()), Ok(()));
 
       // Alice does not owns tokens.
       assert_eq!(erc721.balance_of(alice_encrtyped_address), 0);
@@ -831,45 +824,6 @@ mod erc721 {
       // Token Id 1 does not exists.
       assert_eq!(erc721.owner_of(1), None);
       assert_eq!(erc721.token_nonce_of(nft_id), 0);
-    }
-
-    #[ink::test]
-    fn burn_fails_token_not_found() {
-      // Create a new contract instance.
-      let mut erc721 = Erc721::new(BASE_URI.to_string());
-
-      // Try burning a non existent token.
-      assert_eq!(
-        erc721.burn(1, ALICE_BURN_SIGNATURE.to_string()),
-        Err(Error::TokenNotFound)
-      );
-    }
-
-    #[ink::test]
-    fn burn_fails_not_owner() {
-      // Create a new contract instance.
-      let mut erc721 = Erc721::new(BASE_URI.to_string());
-      let alice_ephemeral_public_key = ALICE_EPHEMERAL_PUBLIC_KEY.to_string();
-      let alice_encrtyped_address = AccountId::from(ALICE_ENCRTYPED_ADDRESS_BYTES);
-      let nft_id = 1;
-
-      let signature = ALICE_TRANSFER_TO_BOB_SIGNATURE.to_string();
-
-      // Create token Id 1 for Alice.
-      assert_eq!(
-        erc721.mint(alice_encrtyped_address, alice_ephemeral_public_key),
-        Ok(())
-      );
-
-      // Alice owns token 1.
-      assert_eq!(erc721.balance_of(alice_encrtyped_address), 1);
-
-      // Owner owns NFT 1.
-      assert_eq!(erc721.owner_of(nft_id), Some(alice_encrtyped_address));
-      assert_eq!(erc721.token_nonce_of(nft_id), 1);
-
-      // Try burning this token with a different account.
-      assert_eq!(erc721.burn(1, signature), Err(Error::NotOwner));
     }
   }
 }
