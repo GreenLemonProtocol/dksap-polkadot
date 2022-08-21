@@ -8,7 +8,6 @@ This project was funded by the Web3 Foundation Grants Program.
 
 * [Proposal: Dual-Key Stealth Address Protocol](https://github.com/w3f/Grants-Program/pull/997)
 * [Proposal: Green Lemon Protocol🍋 - An anonymous NFT solution](https://github.com/w3f/Grants-Program/pull/1096)
-* [Milestone Delivery: Dual-Key Stealth Address Protocol](https://github.com/w3f/Grant-Milestone-Delivery/pull/504)
 
 Medium Articles about Green Lemon Protocol:
 
