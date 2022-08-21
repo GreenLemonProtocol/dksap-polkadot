@@ -12,7 +12,7 @@ This project was funded by the Web3 Foundation Grants Program.
 
 
 ### Algorithm
-The first full working implementation of DKSAP(Dual-Key Stealth Address Protocol) was announced by a developer known as rynomster/sdcoin in 2014 for ShadowSend, a capable, efficient and decentralized anonymous wallet solution. The DKSAP has been implemented in many cryptocurrency systems since then, including Monero, Samourai Wallet, and TokenPay, just to name a few. The protocol takes advantage of two pairs of cryptographic keys, namely a ‘scan key’ pair and a ‘spend key’ pair, and computes a one-time payment address per transaction, as detailed below:
+The first full working implementation of DKSAP(Dual-Key Stealth Address Protocol) was announced by a developer known as rynomster/sdcoin in 2014 for ShadowSend, a capable, efficient and decentralized anonymous wallet solution. The DKSAP has been implemented in many cryptocurrency systems since then, including Monero, Samourai Wallet, and TokenPay, just to name a few. The protocol takes advantage of two pairs of cryptographic keys, namely a ‘scan key’ pair and a ‘spend key’ pair, and computes a one-time encrypted address per transaction, as detailed below:
 
 * The receiver has two private/public key pairs (s, S) and (b, B), where S = s^G and B = b^G are ‘scan public key’ and ‘spend public key’, respectively. Here G is the base point of an elliptic curve group.
 
@@ -20,11 +20,11 @@ The first full working implementation of DKSAP(Dual-Key Stealth Address Protocol
 
 * Both the sender and receiver can compute a shared secret c using the ECDH: c = H(r^s^G) = H(r^S) = H(s^R), where H(^) is a cryptographic hash function.
 
-* The sender uses c^G + B as the ephemeral destination address for sending the payment.
+* The sender uses c^G + B as the ephemeral destination address for sending the token.
 
-* The receiver actively monitors the blockchain and checks whether some transaction has been sent to the purported destination address c^G + B. Depending on whether the wallet is encrypted, the receiver can compute the same destination address in two different ways, i.e., c^G + B = (c + b)^G. If there is a match, the payment can be spent using the corresponding private key c + b. Note that the ephemeral private key c + b can only be computed by the receiver.
+* The receiver actively monitors the blockchain and checks whether some transaction has been sent to the purported destination address c^G + B. Depending on whether the wallet is encrypted, the receiver can compute the same destination address in two different ways, i.e., c^G + B = (c + b)^G. If there is a match, the token can be spent using the corresponding private key c + b. Note that the ephemeral private key c + b can only be computed by the receiver.
 
-In DKSAP, if an auditor or a proxy server exists in the system, the receiver can share the ‘scan private key’ s and the ‘spend public key’ B with the auditor/proxy server so that those entities can scan the blockchain transaction on behalf of the receiver. However, they are not able the compute the ephemeral private key c + b and spend the payment.
+In DKSAP, if an auditor or a proxy server exists in the system, the receiver can share the ‘scan private key’ s and the ‘spend public key’ B with the auditor/proxy server so that those entities can scan the blockchain transaction on behalf of the receiver. However, they are not able the compute the ephemeral private key c + b and transfer the token.
 
 ### Project Details
 This project demonstrates how to build non-fungible tokens with an anonymous owner for the Polkadot ecosystem.
