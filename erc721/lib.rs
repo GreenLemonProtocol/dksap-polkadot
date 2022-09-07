@@ -55,11 +55,10 @@
 //! Tokens can be destroyed by burning them. Only the token owner is allowed to burn a token.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-
 use ink_lang as ink;
 
 #[ink::contract]
-mod erc721 {
+pub mod erc721 {
   use ink_prelude::{string::String, string::ToString, vec::Vec};
 
   use ink_storage::{traits::SpreadAllocate, Mapping};
@@ -95,7 +94,6 @@ mod erc721 {
   pub enum Error {
     NotOwner,
     NotApproved,
-    TokenExists,
     AliasExists,
     TokenNotFound,
     CannotInsert,
@@ -131,7 +129,14 @@ mod erc721 {
     id: TokenId,
   }
 
+  #[ink(impl)]
   impl Erc721 {
+    /// Returns a anonymous NFT contract instance with the base_uri given
+    ///
+    /// # Arguments
+    ///
+    /// * `base_uri` - Base Uniform Resource Identifier (URI)
+    ///
     /// Creates a new ERC-721 token contract.
     #[ink(constructor)]
     pub fn new(base_uri: String) -> Self {
@@ -355,7 +360,7 @@ mod erc721 {
       let mut messag_hash: [u8; 32] = [0; 32];
       ink_env::hash_bytes::<ink_env::hash::Keccak256>(&input, &mut messag_hash);
 
-      return messag_hash;
+      messag_hash
     }
 
     /// Recovers the AccountId for given signature and message_hash,
@@ -374,7 +379,7 @@ mod erc721 {
         .unwrap();
       // recover the compressed ECDSA public key from signature and message_hash
       let mut recovered_public_key = [0u8; 33];
-      ink_env::ecdsa_recover(&signature, &message_hash, &mut recovered_public_key).unwrap();
+      ink_env::ecdsa_recover(&signature, message_hash, &mut recovered_public_key).unwrap();
 
       // encode the compressed ECDSA public key to AccountId
       let mut public_key_hash = [0u8; 32];
@@ -475,10 +480,6 @@ mod erc721 {
         ..
       } = self;
 
-      if token_owner.contains(&id) {
-        return Err(Error::TokenExists);
-      }
-
       if *to == AccountId::from([0x0; 32]) {
         return Err(Error::NotAllowed);
       };
@@ -518,7 +519,7 @@ mod erc721 {
       let signer = self.recover_signer(&messag_hash, &signature)?;
 
       let owner = self.owner_of(id);
-      if !(owner == Some(signer)) {
+      if owner != Some(signer) {
         return Err(Error::NotAllowed);
       };
 
@@ -686,11 +687,17 @@ mod erc721 {
       // Alice does not owns tokens.
       assert_eq!(erc721.balance_of(accounts.alice), 0);
 
+      // Total supply = 0
+      assert_eq!(erc721.total_supply(), 0);
+
       // Create token Id 1.
       assert_eq!(
         erc721.mint(accounts.alice, ephemeral_public_key.clone()),
         Ok(())
       );
+
+      // Total supply = 1
+      assert_eq!(erc721.total_supply(), 1);
 
       // Owner owns 1 token.
       assert_eq!(erc721.balance_of(accounts.alice), nft_id);
@@ -725,9 +732,21 @@ mod erc721 {
       let nft_id = 1;
       // Create token Id 1 for Alice.
       assert_eq!(
-        erc721.mint(alice_encrypted_address, alice_ephemeral_public_key),
+        erc721.mint(alice_encrypted_address, alice_ephemeral_public_key.clone()),
         Ok(())
       );
+
+      // Create token Id 2 for Charlie.
+      assert_eq!(
+        erc721.mint(
+          charlie_encrypted_address,
+          charlie_ephemeral_public_key.clone()
+        ),
+        Ok(())
+      );
+
+      // Total supply = 2
+      assert_eq!(erc721.total_supply(), 2);
 
       // Alice owns token 1.
       assert_eq!(erc721.balance_of(alice_encrypted_address), 1);
@@ -742,6 +761,17 @@ mod erc721 {
           BOB_TRANSFER_TO_CHARLIE_SIGNATURE.to_string()
         ),
         Err(Error::NotApproved)
+      );
+
+      // Bob approves Alice to transfer token 1.
+      assert_eq!(
+        erc721.approve(
+          alice_encrypted_address,
+          2,
+          alice_ephemeral_public_key.clone(),
+          ALICE_APPROVE_TO_BOB_SIGNATURE.to_string()
+        ),
+        Err(Error::NotAllowed)
       );
 
       // Alice approves Bob to transfer token 1.
@@ -796,6 +826,9 @@ mod erc721 {
         Err(Error::TokenNotFound)
       );
 
+      // Total supply = 0
+      assert_eq!(erc721.total_supply(), 0);
+
       // Create token Id 1 for Alice.
       assert_eq!(
         erc721.mint(alice_encrtyped_address, alice_ephemeral_public_key),
@@ -815,6 +848,9 @@ mod erc721 {
         Err(Error::NotOwner)
       );
 
+      // Total supply = 1
+      assert_eq!(erc721.total_supply(), 1);
+
       // Burn token Id 1.
       assert_eq!(erc721.burn(1, alice_burn_signature.to_string()), Ok(()));
 
@@ -824,6 +860,9 @@ mod erc721 {
       // Token Id 1 does not exists.
       assert_eq!(erc721.owner_of(1), None);
       assert_eq!(erc721.token_nonce_of(nft_id), 0);
+
+      // Total supply = 0
+      assert_eq!(erc721.total_supply(), 0);
     }
   }
 }
