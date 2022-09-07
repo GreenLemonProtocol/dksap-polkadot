@@ -732,12 +732,21 @@ pub mod erc721 {
       let nft_id = 1;
       // Create token Id 1 for Alice.
       assert_eq!(
-        erc721.mint(alice_encrypted_address, alice_ephemeral_public_key),
+        erc721.mint(alice_encrypted_address, alice_ephemeral_public_key.clone()),
         Ok(())
       );
 
-      // Total supply = 1
-      assert_eq!(erc721.total_supply(), 1);
+      // Create token Id 2 for Charlie.
+      assert_eq!(
+        erc721.mint(
+          charlie_encrypted_address,
+          charlie_ephemeral_public_key.clone()
+        ),
+        Ok(())
+      );
+
+      // Total supply = 2
+      assert_eq!(erc721.total_supply(), 2);
 
       // Alice owns token 1.
       assert_eq!(erc721.balance_of(alice_encrypted_address), 1);
@@ -752,6 +761,17 @@ pub mod erc721 {
           BOB_TRANSFER_TO_CHARLIE_SIGNATURE.to_string()
         ),
         Err(Error::NotApproved)
+      );
+
+      // Bob approves Alice to transfer token 1.
+      assert_eq!(
+        erc721.approve(
+          alice_encrypted_address,
+          2,
+          alice_ephemeral_public_key.clone(),
+          ALICE_APPROVE_TO_BOB_SIGNATURE.to_string()
+        ),
+        Err(Error::NotAllowed)
       );
 
       // Alice approves Bob to transfer token 1.
