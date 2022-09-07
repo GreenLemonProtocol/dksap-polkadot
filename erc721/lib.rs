@@ -55,11 +55,10 @@
 //! Tokens can be destroyed by burning them. Only the token owner is allowed to burn a token.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-
 use ink_lang as ink;
 
 #[ink::contract]
-mod erc721 {
+pub mod erc721 {
   use ink_prelude::{string::String, string::ToString, vec::Vec};
 
   use ink_storage::{traits::SpreadAllocate, Mapping};
@@ -131,7 +130,14 @@ mod erc721 {
     id: TokenId,
   }
 
+  #[ink(impl)]
   impl Erc721 {
+    /// Returns a anonymous NFT contract instance with the base_uri given
+    ///
+    /// # Arguments
+    ///
+    /// * `base_uri` - Base Uniform Resource Identifier (URI)
+    ///
     /// Creates a new ERC-721 token contract.
     #[ink(constructor)]
     pub fn new(base_uri: String) -> Self {
