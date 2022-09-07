@@ -355,7 +355,7 @@ mod erc721 {
       let mut messag_hash: [u8; 32] = [0; 32];
       ink_env::hash_bytes::<ink_env::hash::Keccak256>(&input, &mut messag_hash);
 
-      return messag_hash;
+      messag_hash
     }
 
     /// Recovers the AccountId for given signature and message_hash,
@@ -374,7 +374,7 @@ mod erc721 {
         .unwrap();
       // recover the compressed ECDSA public key from signature and message_hash
       let mut recovered_public_key = [0u8; 33];
-      ink_env::ecdsa_recover(&signature, &message_hash, &mut recovered_public_key).unwrap();
+      ink_env::ecdsa_recover(&signature, message_hash, &mut recovered_public_key).unwrap();
 
       // encode the compressed ECDSA public key to AccountId
       let mut public_key_hash = [0u8; 32];
@@ -518,7 +518,7 @@ mod erc721 {
       let signer = self.recover_signer(&messag_hash, &signature)?;
 
       let owner = self.owner_of(id);
-      if !(owner == Some(signer)) {
+      if owner != Some(signer) {
         return Err(Error::NotAllowed);
       };
 
