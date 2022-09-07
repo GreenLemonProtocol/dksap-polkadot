@@ -94,7 +94,6 @@ pub mod erc721 {
   pub enum Error {
     NotOwner,
     NotApproved,
-    TokenExists,
     AliasExists,
     TokenNotFound,
     CannotInsert,
@@ -480,10 +479,6 @@ pub mod erc721 {
         owned_tokens_count,
         ..
       } = self;
-
-      if token_owner.contains(&id) {
-        return Err(Error::TokenExists);
-      }
 
       if *to == AccountId::from([0x0; 32]) {
         return Err(Error::NotAllowed);
