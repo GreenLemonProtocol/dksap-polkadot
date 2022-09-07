@@ -40,7 +40,7 @@ If you are a new talent for Polkadot blockchain or Node.js, please install the e
 
 [Install Node.js environment](https://nodejs.org/en/download/)
 
-Please [install cargo-contract](https://github.com/paritytech/cargo-contract) before build contracts, because we need add nightly builds to runtime env & install binaryen in a version >= 99.
+Please [install cargo-contract](https://github.com/paritytech/cargo-contract) before build contracts, because we need to add nightly builds to runtime env & install binaryen in a version >= 99.
 
 
 ```
