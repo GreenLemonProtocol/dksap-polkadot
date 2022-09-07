@@ -686,11 +686,17 @@ mod erc721 {
       // Alice does not owns tokens.
       assert_eq!(erc721.balance_of(accounts.alice), 0);
 
+      // Total supply = 0
+      assert_eq!(erc721.total_supply(), 0);
+
       // Create token Id 1.
       assert_eq!(
         erc721.mint(accounts.alice, ephemeral_public_key.clone()),
         Ok(())
       );
+
+      // Total supply = 1
+      assert_eq!(erc721.total_supply(), 1);
 
       // Owner owns 1 token.
       assert_eq!(erc721.balance_of(accounts.alice), nft_id);
@@ -728,6 +734,9 @@ mod erc721 {
         erc721.mint(alice_encrypted_address, alice_ephemeral_public_key),
         Ok(())
       );
+
+      // Total supply = 1
+      assert_eq!(erc721.total_supply(), 1);
 
       // Alice owns token 1.
       assert_eq!(erc721.balance_of(alice_encrypted_address), 1);
@@ -796,6 +805,9 @@ mod erc721 {
         Err(Error::TokenNotFound)
       );
 
+      // Total supply = 0
+      assert_eq!(erc721.total_supply(), 0);
+
       // Create token Id 1 for Alice.
       assert_eq!(
         erc721.mint(alice_encrtyped_address, alice_ephemeral_public_key),
@@ -815,6 +827,9 @@ mod erc721 {
         Err(Error::NotOwner)
       );
 
+      // Total supply = 1
+      assert_eq!(erc721.total_supply(), 1);
+
       // Burn token Id 1.
       assert_eq!(erc721.burn(1, alice_burn_signature.to_string()), Ok(()));
 
@@ -824,6 +839,9 @@ mod erc721 {
       // Token Id 1 does not exists.
       assert_eq!(erc721.owner_of(1), None);
       assert_eq!(erc721.token_nonce_of(nft_id), 0);
+
+      // Total supply = 0
+      assert_eq!(erc721.total_supply(), 0);
     }
   }
 }
