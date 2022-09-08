@@ -2,7 +2,7 @@
 
 ### Overview
 
-Public ledgers are generally seen as “pseudo-anonymous” as addresses can be linked to one person although that person’s identity is unknown to the public. However, by combining this info with other data it is possible to discover the real-world identity behind the address. Many individuals and companies prefer to have an additional layer of security to keep their privacy. That’s where Dual-Key Stealth Address Protocol(DKSAP) comes to play.
+Public ledgers are generally seen as `pseudo-anonymous` as addresses can be linked to one person although that person’s identity is unknown to the public. However, by combining this info with other data it is possible to discover the real-world identity behind the address. Many individuals and companies prefer to have an additional layer of security to keep their privacy. That’s where Dual-Key Stealth Address Protocol(DKSAP) comes to play.
 
 This project was funded by the Web3 Foundation Grants Program.
 
@@ -20,13 +20,13 @@ The first full working implementation of DKSAP(Dual-Key Stealth Address Protocol
 
 * The sender generates an ephemeral key pair (r, R), where R = r^G, and transmits it with the transaction.
 
-* Both the sender and receiver can compute a shared secret c using the ECDH: c = H(r^s^G) = H(r^S) = H(s^R), where H(^) is a cryptographic hash function.
+* Both the sender and receiver can compute a shared secret c using the ECDH: c = hash(r^s^G) = hash(r^S) = hash(s^R), where hash is a cryptographic hash function.
 
 * The sender uses c^G + B as the ephemeral destination address for sending the token.
 
 * The receiver actively monitors the blockchain and checks whether some transaction has been sent to the purported destination address c^G + B. Depending on whether the wallet is encrypted, the receiver can compute the same destination address in two different ways, i.e., c^G + B = (c + b)^G. If there is a match, the token can be spent using the corresponding private key c + b. Note that the ephemeral private key c + b can only be computed by the receiver.
 
-In DKSAP, if an auditor or a proxy server exists in the system, the receiver can share the ‘scan private key’ s and the ‘spend public key’ B with the auditor/proxy server so that those entities can scan the blockchain transaction on behalf of the receiver. However, they are not able the compute the ephemeral private key c + b and transfer the token.
+In DKSAP, if an auditor or a proxy server exists in the system, the receiver can share the `scan private key` s and the `spend public key` B with the auditor/proxy server so that those entities can scan the blockchain transaction on behalf of the receiver. However, they are not able the compute the ephemeral private key c + b and transfer the token.
 
 ### Project Details
 This project demonstrates how to build non-fungible tokens with an anonymous owner for the Polkadot ecosystem.
