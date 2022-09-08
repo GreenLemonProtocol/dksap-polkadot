@@ -54,6 +54,8 @@
 //!
 //! Tokens can be destroyed by burning them. Only the token owner is allowed to burn a token.
 
+// This contract inspired by [erc721 from paritytech](https://github.com/paritytech/ink/tree/master/examples/erc721).
+
 #![cfg_attr(not(feature = "std"), no_std)]
 use ink_lang as ink;
 
