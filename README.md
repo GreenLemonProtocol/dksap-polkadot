@@ -70,14 +70,14 @@ cargo doc --open
 ```
 
 ##### Deploy contract
-Upload compiled contract `erc721/target/ink/erc721.contract` to local node by substrate contracts UI.
+Upload compiled contract `erc721/target/ink/erc721.contract` to local node by [Substrate Contracts UI](https://contracts-ui.substrate.io/).
 
 ##### Base URI for deployment constructor
 ```
 https://raw.githubusercontent.com/GreenLemonProtocol/assets/main/nft
 ```
 
-[Click me to read more instructions](https://ink.substrate.io/getting-started/deploy-your-contract/)
+[How to deploy contract to local node](https://ink.substrate.io/getting-started/deploy-your-contract/)
 
 
 ##### Update contract address
