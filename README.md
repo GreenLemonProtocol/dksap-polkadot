@@ -2,7 +2,7 @@
 
 ### Overview
 
-Public ledgers are generally seen as `pseudo-anonymous` as addresses can be linked to one person although that person’s identity is unknown to the public. However, by combining this info with other data it is possible to discover the real-world identity behind the address. Many individuals and companies prefer to have an additional layer of security to keep their privacy. That’s where Dual-Key Stealth Address Protocol(DKSAP) comes to play.
+Public ledgers are generally seen as `pseudo-anonymous` as addresses can be linked to one person although that person’s identity is unknown to the public. However, by combining this info with other data it is possible to discover the real-world identity behind the address. Many individuals and companies prefer to have an additional layer of security to keep their privacy. That’s where dual-Key stealth address protocol comes to play.
 
 This project was funded by the Web3 Foundation Grants Program.
 
