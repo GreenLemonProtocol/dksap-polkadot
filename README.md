@@ -9,7 +9,7 @@ This project was funded by the Web3 Foundation Grants Program.
 * [Proposal: Dual-Key Stealth Address Protocol](https://github.com/w3f/Grants-Program/pull/997)
 * [Proposal: Green Lemon Protocol🍋 - An anonymous NFT solution](https://github.com/w3f/Grants-Program/pull/1096)
 
-Medium Articles about Green Lemon Protocol:
+Medium articles about Green Lemon Protocol:
 
 * [Green Lemon Protocol — An anonymous NFT solution](https://medium.com/@wuyahuang/green-lemon-protocol-an-anonymous-nft-solution-2fad91cc8f48)
 
@@ -31,7 +31,7 @@ In DKSAP, if an auditor or a proxy server exists in the system, the receiver can
 ### Project Details
 This project demonstrates how to build non-fungible tokens with an anonymous owner for the Polkadot ecosystem.
 
-#### How to Play
+#### How to play
 
 ##### Install
 If you are a new talent for Polkadot blockchain or Node.js, please install the environment first.
