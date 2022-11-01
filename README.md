@@ -127,6 +127,7 @@ node client/6-aliceBurn.js
 
 ### Future Plan
 * Currently, user transactions are sent free of charge by relayer. This is not possible in the production environment, so we need to modify the relayer in the future version. We can add a deposit function to NFT so that users can deposit tokens into the contract, and then transfer the token as a transaction fee to the relayer based on zero-knowledge proof.
+* [The smart contracts of Green Lemon Protocol for Polkadot](https://github.com/GreenLemonProtocol/ink)
 
 ### Demo Video
 [Milestone 1](https://www.youtube.com/watch?v=etVIPgOjFNg)
