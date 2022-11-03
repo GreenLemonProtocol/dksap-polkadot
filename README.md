@@ -9,9 +9,10 @@ This project was funded by the Web3 Foundation Grants Program.
 * [Proposal: Dual-Key Stealth Address Protocol](https://github.com/w3f/Grants-Program/pull/997)
 * [Proposal: Green Lemon Protocol🍋 - An anonymous NFT solution](https://github.com/w3f/Grants-Program/pull/1096)
 
-Medium articles about Green Lemon Protocol:
+Medium articles:
 
-* [Green Lemon Protocol — An anonymous NFT solution](https://medium.com/@wuyahuang/green-lemon-protocol-an-anonymous-nft-solution-2fad91cc8f48)
+* [Green Lemon Protocol I — An anonymous NFT solution](https://medium.com/@wuyahuang/green-lemon-protocol-an-anonymous-nft-solution-2fad91cc8f48)
+* [Green Lemon Protocol II - An anonymous NFT solution](https://medium.com/@wuyahuang/green-lemon-protocol-ii-an-anonymous-nft-solution-917046a8f1ef)
 
 ### Algorithm
 The first full working implementation of DKSAP(Dual-Key Stealth Address Protocol) was announced by a developer known as rynomster/sdcoin in 2014 for ShadowSend, a capable, efficient and decentralized anonymous wallet solution. The DKSAP has been implemented in many cryptocurrency systems since then, including Monero, Samourai Wallet, and TokenPay, just to name a few. The protocol takes advantage of two pairs of cryptographic keys, namely a `scan key` pair and a `spend key` pair, and computes a one-time encrypted address per transaction, as detailed below:
@@ -20,7 +21,7 @@ The first full working implementation of DKSAP(Dual-Key Stealth Address Protocol
 
 * The sender generates an ephemeral key pair (r, R), where R = r^G, and transmits it with the transaction.
 
-* Both the sender and receiver can compute a shared secret c using the ECDH: c = hash(r^s^G) = hash(r^S) = hash(s^R), where hash is a cryptographic hash function.
+* Both the sender and receiver can compute a shared secret c using the ECDH: c = hash(r^s^G) = hash(r^S) = hash(s^R), where the hash is a cryptographic hash function.
 
 * The sender uses c^G + B as the ephemeral destination address for sending the token.
 
@@ -40,7 +41,7 @@ If you are a new talent for Polkadot blockchain or Node.js, please install the e
 
 [Install Node.js environment](https://nodejs.org/en/download/)
 
-Please [install cargo-contract](https://github.com/paritytech/cargo-contract) before build contracts, because we need to add nightly builds to runtime env & install binaryen in a version >= 99.
+Please [install cargo-contract](https://github.com/paritytech/cargo-contract) before building contracts, because we need to add nightly builds to runtime env & install binaryen in a version >= 99.
 
 
 ```
@@ -70,18 +71,18 @@ cargo doc --open
 ```
 
 ##### Deploy contract
-Upload compiled contract `erc721/target/ink/erc721.contract` to local node by [Substrate Contracts UI](https://contracts-ui.substrate.io/).
+Upload compiled contract `erc721/target/ink/erc721.contract` to a local node by [Substrate Contracts UI](https://contracts-ui.substrate.io/).
 
 ##### Base URI for deployment constructor
 ```
 https://raw.githubusercontent.com/GreenLemonProtocol/assets/main/nft
 ```
 
-[How to deploy contract to local node](https://ink.substrate.io/getting-started/deploy-your-contract/)
+[How to deploy the contract to the local node](https://ink.substrate.io/getting-started/deploy-your-contract/)
 
 
 ##### Update contract address
-Copy erc721 contract address from substrate contracts UI after contract deployed, open config/default.json, and update `ContractAddress`.
+Copy the erc721 contract address from substrate contracts UI after the contract is deployed, open config/default.json, and update `ContractAddress`.
 
 ##### Note: Please back to the project root directory before running the below commands.
 
@@ -120,7 +121,7 @@ node client/4-bobTransferToCharlie.js
 node client/5-charlieTransferToAlice.js
 ```
 
-##### Alice burn NFT
+##### Alice burns NFT
 ```
 node client/6-aliceBurn.js
 ```
