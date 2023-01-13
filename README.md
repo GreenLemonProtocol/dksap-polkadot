@@ -17,7 +17,7 @@ Medium articles:
 ### Algorithm
 The first full working implementation of DKSAP(Dual-Key Stealth Address Protocol) was announced by a developer known as rynomster/sdcoin in 2014 for ShadowSend, a capable, efficient and decentralized anonymous wallet solution. The DKSAP has been implemented in many cryptocurrency systems since then, including Monero, Samourai Wallet, and TokenPay, just to name a few. The protocol takes advantage of two pairs of cryptographic keys, namely a `scan key` pair and a `spend key` pair, and computes a one-time encrypted address per transaction, as detailed below:
 
-* The receiver has two private/public key pairs (s, S) and (b, B), where S = s^G and B = b^G are ‘scan public key’ and ‘spend public key’, respectively. Here G is the base point of an elliptic curve group.
+* The receiver has two private/public key pairs (s, S) and (b, B), where S = s^G and B = b^G are `scan public key` and `spend public key`, respectively. Here G is the base point of an elliptic curve group.
 
 * The sender generates an ephemeral key pair (r, R), where R = r^G, and transmits it with the transaction.
 
