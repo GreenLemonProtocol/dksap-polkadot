@@ -21,7 +21,7 @@ The first full working implementation of DKSAP(Dual-Key Stealth Address Protocol
 
 * The sender generates an ephemeral key pair (r, R), where R = r^G, and transmits it with the transaction.
 
-* Both the sender and receiver can compute a shared secret c using the ECDH: c = hash(r^s^G) = hash(r^S) = hash(s^R), where the hash is a cryptographic hash function.
+* Both the sender and receiver can compute a shared `secret c` using the ECDH: c = hash(r^s^G) = hash(r^S) = hash(s^R), where the hash is a cryptographic hash function.
 
 * The sender uses c^G + B as the ephemeral destination address for sending the token.
 
